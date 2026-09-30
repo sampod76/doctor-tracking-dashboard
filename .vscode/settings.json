@@ -1,0 +1,20 @@
+{
+    "dotenv.enableAutocloaking": false,
+    "cSpell.words": [
+        "Alldepartment",
+        "Alllevelvalue",
+        "attributesdata",
+        "Createdepartment",
+        "createlevelvalue",
+        "Deleteddepartment",
+        "deletelevelvalue",
+        "deletetours",
+        "Getdepartment",
+        "getlevelvalue",
+        "Personalprice",
+        "registationlist",
+        "Tablestatus",
+        "Updatedepartment",
+        "updatelevelvalue"
+    ]
+}
