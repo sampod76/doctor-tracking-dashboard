@@ -1,6 +1,5 @@
 import { SidebarData } from "@/types";
-import { AppstoreAddOutlined ,MedicineBoxTwoTone,ContactsTwoTone  } from "@ant-design/icons";
-
+import { AppstoreAddOutlined, MedicineBoxTwoTone, ContactsTwoTone } from "@ant-design/icons";
 
 export const sidebarData: SidebarData[] = [
   {
@@ -15,17 +14,16 @@ export const sidebarData: SidebarData[] = [
       },
       {
         title: "Doctors",
-        key: "doctors",
+        key: "/dashboard/doctors",
         url: "/dashboard/doctors",
         icon: MedicineBoxTwoTone,
       },
       {
         title: "Patients",
-        key: "patients",
-        url: "/dashboard/patient ",
+        key: "/dashboard/patient",
+        url: "/dashboard/patient",
         icon: ContactsTwoTone,
-      }
-     
+      },
     ],
   },
 ];

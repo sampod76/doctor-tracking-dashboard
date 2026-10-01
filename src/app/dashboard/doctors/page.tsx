@@ -13,7 +13,8 @@ import {
 } from "@/types/doctor";
 
 import { apiErrorMessage } from "@/utils/api-error";
-import { Alert, Button, Input, Select, Tag, Tooltip } from "antd";
+import { EditOutlined, EyeOutlined, SearchOutlined } from "@ant-design/icons";
+import { Alert, Button, Input, Select, Space, Tag, Tooltip } from "antd";
 import type { ColumnsType } from "antd/es/table";
 import { useState } from "react";
 
@@ -196,6 +197,36 @@ export default function DoctorsPage() {
         );
       },
     },
+    {
+      title: "Actions",
+      key: "actions",
+      width: 110,
+      fixed: "right",
+      align: "center",
+      render: (_, record) => (
+        <Space size={4}>
+          <Tooltip title="View">
+            <Button
+              type="text"
+              icon={<EyeOutlined />}
+              onClick={() => {
+                console.log("View doctor:", record);
+              }}
+            />
+          </Tooltip>
+
+          <Tooltip title="Edit">
+            <Button
+              type="text"
+              icon={<EditOutlined />}
+              onClick={() => {
+                console.log("Edit doctor:", record);
+              }}
+            />
+          </Tooltip>
+        </Space>
+      ),
+    },
   ];
 
   const resetFilters = () => {
@@ -212,75 +243,85 @@ export default function DoctorsPage() {
     <div className="min-h-screen bg-transparent p-4 sm:p-6">
       <div className="mb-6 space-y-1">
         <h2 className="text-3xl font-bold text-gray-900">Doctors List</h2>
-        <p className="text-sm text-gray-500">View and filter all doctors</p>
       </div>
-      <div className="space-y-2">
-        <div className="grid grid-cols-1 gap-3 rounded-xl p-5 shadow-xl shadow-sky-100 sm:grid-cols-2 xl:grid-cols-4">
-          <Input
-            aria-label="Search doctors"
-            placeholder="Search by name, email, phone or hospital..."
-            className="sm:col-span-2"
-            allowClear
-            value={searchTerm}
-            onChange={(event) => {
-              setSearchTerm(event.target.value);
-              setPage(1);
-            }}
-          />
-          <Select<SPECIALIZATION>
-            aria-label="Specialization"
-            placeholder="All Specializations"
-            allowClear
-            value={specialization}
-            options={Object.values(SPECIALIZATION).map((value) => ({
-              value,
-              label: specializationLabel(value),
-            }))}
-            onChange={(value) => {
-              setSpecialization(value);
-              setPage(1);
-            }}
-          />
-          <Input
-            aria-label="Hospital"
-            placeholder="Filter by hospital"
-            allowClear
-            value={hospital}
-            onChange={(event) => {
-              setHospital(event.target.value);
-              setPage(1);
-            }}
-          />
-          <Select
-            aria-label="Active status"
-            value={isActive === undefined ? "all" : isActive ? "active" : "inactive"}
-            options={[
-              { value: "all", label: "All Status" },
-              { value: "active", label: "Active" },
-              { value: "inactive", label: "Inactive" },
-            ]}
-            onChange={(value) => {
-              setIsActive(value === "all" ? undefined : value === "active");
-              setPage(1);
-            }}
-          />
-          <Select<DoctorSortBy>
-            aria-label="Sort by"
-            value={sortBy}
-            options={sortOptions}
-            onChange={changeSortBy}
-          />
-          <Select<DoctorSortOrder>
-            aria-label="Sort order"
-            value={sortOrder}
-            options={[
-              { value: "asc", label: "Ascending" },
-              { value: "desc", label: "Descending" },
-            ]}
-            onChange={changeSortOrder}
-          />
-          <Button onClick={resetFilters}>Reset Filters</Button>
+      <div className="space-y-4">
+        <div className="rounded-xl border border-slate-200 bg-white p-3 shadow-sm shadow-blue-200">
+          <div className="flex flex-col gap-3 xl:flex-row xl:items-center">
+            {/* Search */}
+            <Input
+              aria-label="Search doctors"
+              placeholder="Search name, doctors, hospitals..."
+              allowClear
+              prefix={<SearchOutlined className="text-slate-400" />}
+              value={searchTerm}
+              className="xl:min-w-[280px] xl:flex-1"
+              onChange={(event) => {
+                setSearchTerm(event.target.value);
+                setPage(1);
+              }}
+            />
+
+            {/* Specialization */}
+            <Select<SPECIALIZATION>
+              aria-label="Specialization"
+              placeholder="All Specializations"
+              allowClear
+              value={specialization}
+              className="w-full xl:w-[210px]"
+              options={Object.values(SPECIALIZATION).map((value) => ({
+                value,
+                label: specializationLabel(value),
+              }))}
+              onChange={(value) => {
+                setSpecialization(value);
+                setPage(1);
+              }}
+            />
+
+            {/* Status */}
+            <Select
+              aria-label="Active status"
+              value={isActive === undefined ? "all" : isActive ? "active" : "inactive"}
+              className="w-full xl:w-[150px]"
+              options={[
+                { value: "all", label: "All Status" },
+                { value: "active", label: "Active" },
+                { value: "inactive", label: "Inactive" },
+              ]}
+              onChange={(value) => {
+                setIsActive(value === "all" ? undefined : value === "active");
+                setPage(1);
+              }}
+            />
+
+            {/* Sort By */}
+            <Select<DoctorSortBy>
+              aria-label="Sort by"
+              value={sortBy}
+              options={sortOptions}
+              onChange={changeSortBy}
+              className="w-full xl:w-[170px]"
+            />
+
+            {/* Sort Order */}
+            <Select<DoctorSortOrder>
+              aria-label="Sort order"
+              value={sortOrder}
+              options={[
+                { value: "asc", label: "Ascending" },
+                { value: "desc", label: "Descending" },
+              ]}
+              onChange={changeSortOrder}
+              className="w-full xl:w-[150px]"
+            />
+
+            {/* Reset */}
+            <Button onClick={resetFilters} className="w-full xl:w-auto">
+              Reset
+            </Button>
+          </div>
         </div>
+
         {error && !isDebouncing && (
           <Alert
             type="error"
@@ -293,7 +334,8 @@ export default function DoctorsPage() {
             }
           />
         )}
-        <div className="space-y-6 rounded-xl p-5 shadow-xl shadow-sky-200">
+
+        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-lg shadow-blue-200">
           <Table<TDoctor>
             data={data?.data ?? []}
             meta={data?.meta}

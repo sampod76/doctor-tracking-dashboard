@@ -5,6 +5,7 @@ import { sidebarData } from "@/constants";
 import { SidebarItem as ISidebarItem } from "@/types";
 import { useAppSelector } from "@/redux/hooks";
 import { Layout, Menu, MenuProps } from "antd";
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
@@ -22,6 +23,7 @@ interface SidebarProps {
 
 interface MenuItem {
   key: string;
+  url?: string;
   icon?: React.ReactNode;
   label: React.ReactNode;
   children?: MenuItem[];
@@ -38,6 +40,7 @@ export default function Sidebar({ collapsed, isMobile = false, onMenuSelect }: S
     return items.map((item) => {
       const menuItem: MenuItem = {
         key: item.key,
+        url: item.url,
         icon: item.icon ? <item.icon /> : undefined,
         label: item.url ? (
           <Link href={item.url.startsWith("/") ? item.url : `/${item.url}`}>{item.title}</Link>
@@ -82,6 +85,16 @@ export default function Sidebar({ collapsed, isMobile = false, onMenuSelect }: S
     }))
     .filter((group) => group.filteredItems.length);
   const allFilteredItems = filteredSidebarGroups.flatMap((group) => group.filteredItems);
+
+  const getRouteItems = (items: MenuItem[]): MenuItem[] =>
+    items.flatMap((item) => [...(item.url ? [item] : []), ...getRouteItems(item.children ?? [])]);
+
+  const selectedItem = getRouteItems(allFilteredItems)
+    .filter(
+      (item) =>
+        pathname === item.url || (item.url !== "/dashboard" && pathname.startsWith(`${item.url}/`)),
+    )
+    .sort((a, b) => b.url!.length - a.url!.length)[0];
 
   const getLevelKeys = (items: MenuItem[]) => {
     const key: Record<string, number> = {};
@@ -141,13 +154,8 @@ export default function Sidebar({ collapsed, isMobile = false, onMenuSelect }: S
       theme="light"
     >
       <Link
-        className="logo"
+        className="logo flex h-20 shrink-0 items-center justify-center py-4"
         style={{
-          height: "40px",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          padding: "16px",
           background: "var(--color-bg-container, #ffffff)",
           color: "var(--color-text-base)",
           transition: "all 0.3s ease",
@@ -155,23 +163,18 @@ export default function Sidebar({ collapsed, isMobile = false, onMenuSelect }: S
           zIndex: 2,
         }}
         href="/dashboard"
+        aria-label="Dashboard home"
         onClick={onMenuSelect}
       >
-        {collapsed ? (
-          <h1 style={{ color: "inherit", margin: 0, fontSize: "16px", fontWeight: "bold" }}>AD</h1>
-        ) : (
-          <h1
-            style={{
-              color: "inherit",
-              margin: 0,
-              fontSize: "16px",
-              fontWeight: "bold",
-              textAlign: "center",
-            }}
-          >
-            Admin Dashboard
-          </h1>
-        )}
+        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full border border-black/5 bg-white shadow-sm">
+          <Image
+            src="/auth-logo.png"
+            alt="Logo"
+            width={34}
+            height={34}
+            className="h-[34px] w-[34px] object-contain"
+          />
+        </div>
       </Link>
 
       <div
@@ -192,7 +195,7 @@ export default function Sidebar({ collapsed, isMobile = false, onMenuSelect }: S
               defaultOpenKeys={[
                 pathname.split("/")[1] ? `/${pathname.split("/")[1]}` : "/dashboard",
               ]}
-              selectedKeys={[pathname]}
+              selectedKeys={selectedItem ? [selectedItem.key] : []}
               style={{
                 borderInlineEnd: 0,
                 background: "var(--color-bg-container, #ffffff)",

@@ -543,11 +543,11 @@ body {
 
 /* Alternating table row colors */
 .ant-table-tbody > tr:nth-child(odd) > td {
-  background-color: #ffffff;
+  background-color: #ffffff !important;
 }
 
 .ant-table-tbody > tr:nth-child(even) > td {
-  background-color: #f8fafc;
+  background-color: #f8fafc !important;
 }
 
 /* Row spacing */
@@ -565,9 +565,4 @@ body {
 .ant-table-tbody > tr > td:last-child {
   border-top-right-radius: var(--border-radius-lg);
   border-bottom-right-radius: var(--border-radius-lg);
-}
-
-/* Hover */
-.ant-table-tbody > tr:hover > td {
-  background-color: var(--hover-bg) !important;
 }
