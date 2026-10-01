@@ -11,8 +11,13 @@ import { useState } from "react";
 
 const { Sider } = Layout;
 
+export const SIDEBAR_WIDTH = 220;
+export const COLLAPSED_SIDEBAR_WIDTH = 80;
+
 interface SidebarProps {
   collapsed: boolean;
+  isMobile?: boolean;
+  onMenuSelect?: () => void;
 }
 
 interface MenuItem {
@@ -24,7 +29,7 @@ interface MenuItem {
   allowedRoles?: string[];
 }
 
-export default function Sidebar({ collapsed }: SidebarProps) {
+export default function Sidebar({ collapsed, isMobile = false, onMenuSelect }: SidebarProps) {
   const pathname = usePathname();
 
   const user = useAppSelector((state) => state.auth.user);
@@ -61,6 +66,15 @@ export default function Sidebar({ collapsed }: SidebarProps) {
       }
       return [item];
     });
+  // Keep role/permission metadata internal; only supported properties reach Ant Design.
+  const toAntdMenuItems = (items: MenuItem[]): MenuProps["items"] =>
+    items.map(({ key, label, icon, children }) => ({
+      key,
+      label,
+      icon,
+      ...(children ? { children: toAntdMenuItems(children) } : {}),
+    }));
+
   const filteredSidebarGroups = sidebarData
     .map((group) => ({
       ...group,
@@ -105,9 +119,11 @@ export default function Sidebar({ collapsed }: SidebarProps) {
 
   return (
     <Sider
+      className="dashboard-sidebar"
       trigger={null}
       collapsible
       collapsed={collapsed}
+      collapsedWidth={isMobile ? 0 : COLLAPSED_SIDEBAR_WIDTH}
       style={{
         overflow: "hidden",
         height: "100vh",
@@ -115,40 +131,40 @@ export default function Sidebar({ collapsed }: SidebarProps) {
         left: 0,
         top: 0,
         bottom: 0,
-        zIndex: 1000,
-        background: "var(--sidebar-bg, #0f172a)",
-        borderRight: "1px solid rgba(255, 255, 255, 0.1)",
+        zIndex: isMobile && !collapsed ? 1001 : 1000,
+        background: "var(--color-bg-container, #ffffff)",
+        boxShadow: isMobile && collapsed ? "none" : "2px 0 10px rgba(0, 0, 0, 0.06)",
+        borderRight: "none",
         transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
       }}
-      width={280}
-      theme={"dark"}
+      width={isMobile ? "min(200px, calc(100vw - 24px))" : SIDEBAR_WIDTH}
+      theme="light"
     >
       <Link
         className="logo"
         style={{
-          height: "80px",
+          height: "40px",
           display: "flex",
           alignItems: "center",
           justifyContent: "center",
           padding: "16px",
-          background: "var(--sidebar-bg, #0f172a)",
-          color: "#fff",
-          boxShadow: "0 2px 8px rgba(0, 0, 0, 0.05)",
-          borderBottom: `1px solid rgba(255, 255, 255, 0.1)`,
+          background: "var(--color-bg-container, #ffffff)",
+          color: "var(--color-text-base)",
           transition: "all 0.3s ease",
           position: "relative",
           zIndex: 2,
         }}
         href="/dashboard"
+        onClick={onMenuSelect}
       >
         {collapsed ? (
-          <h1 style={{ color: "white", margin: 0, fontSize: "20px", fontWeight: "bold" }}>AD</h1>
+          <h1 style={{ color: "inherit", margin: 0, fontSize: "16px", fontWeight: "bold" }}>AD</h1>
         ) : (
           <h1
             style={{
-              color: "white",
+              color: "inherit",
               margin: 0,
-              fontSize: "24px",
+              fontSize: "16px",
               fontWeight: "bold",
               textAlign: "center",
             }}
@@ -160,12 +176,12 @@ export default function Sidebar({ collapsed }: SidebarProps) {
 
       <div
         style={{
-          padding: "12px 0",
+          padding: "5px 0",
           height: "calc(100vh - 80px)",
           overflowY: "auto",
           overflowX: "hidden",
           scrollbarWidth: "thin",
-          scrollbarColor: "rgba(255, 255, 255, 0.2) transparent",
+          scrollbarColor: "rgba(0, 0, 0, 0.2) transparent",
         }}
         className="custom-sidebar-scroll"
       >
@@ -178,13 +194,14 @@ export default function Sidebar({ collapsed }: SidebarProps) {
               ]}
               selectedKeys={[pathname]}
               style={{
-                borderRight: 0,
-                background: "transparent",
+                borderInlineEnd: 0,
+                background: "var(--color-bg-container, #ffffff)",
               }}
               openKeys={stateOpenKeys}
               onOpenChange={onOpenChange}
-              items={group.filteredItems as MenuProps["items"]}
-              theme={"dark"}
+              onClick={onMenuSelect}
+              items={toAntdMenuItems(group.filteredItems)}
+              theme="light"
               className="custom-sidebar-menu"
             />
           </div>

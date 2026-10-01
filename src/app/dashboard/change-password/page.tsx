@@ -3,8 +3,9 @@ import { useChangePasswordMutation } from "@/redux/features/auth/authApi";
 import useAuth from "@/hooks/useAuth";
 import { passwordSetSchema, PasswordSetValues } from "@/schema/change-password.schema";
 import { apiErrorMessage } from "@/utils/api-error";
-import { Button, Card, Form, Input, message } from "antd";
+import { App, Button, Card, Form, Input } from "antd";
 export default function ChangePasswordPage() {
+  const { message } = App.useApp();
   const [form] = Form.useForm<PasswordSetValues>();
   const [changePassword, { isLoading }] = useChangePasswordMutation();
   const { logout } = useAuth();

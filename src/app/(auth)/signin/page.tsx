@@ -6,10 +6,11 @@ import { useAppDispatch, useAppSelector } from "@/redux/hooks";
 import type { LoginPayload } from "@/types/auth";
 import { apiErrorMessage } from "@/utils/api-error";
 import { LockOutlined, UserOutlined } from "@ant-design/icons";
-import { Button, Form, Input, message } from "antd";
+import { App, Button, Form, Input } from "antd";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 export default function LoginPage() {
+  const { message } = App.useApp();
   const [signIn, { isLoading }] = useLoginMutation();
   const dispatch = useAppDispatch();
   const router = useRouter();

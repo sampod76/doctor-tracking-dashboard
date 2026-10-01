@@ -2,10 +2,11 @@
 
 import useAuth from "@/hooks/useAuth";
 
-import { Button, message, Result } from "antd";
+import { App, Button, Result } from "antd";
 import Link from "next/link";
 
 export default function ForbiddenPage() {
+  const { message } = App.useApp();
   const { logout } = useAuth();
 
   async function handleLogout() {

@@ -5,12 +5,13 @@ import useAuth from "@/hooks/useAuth";
 
 import {
   DownOutlined,
+  EditOutlined,
   LogoutOutlined,
   MenuFoldOutlined,
   MenuUnfoldOutlined,
   UserOutlined,
 } from "@ant-design/icons";
-import { Avatar, Button, Dropdown, Layout, message } from "antd";
+import { App, Avatar, Button, Dropdown, Layout } from "antd";
 import { useRouter } from "next/navigation";
 
 const { Header } = Layout;
@@ -18,17 +19,23 @@ const { Header } = Layout;
 interface HeaderProps {
   collapsed: boolean;
   setCollapsed: (collapsed: boolean) => void;
+  mobileOpen?: boolean;
+  setMobileOpen?: (open: boolean) => void;
   pageTitle?: string;
 }
 
 export default function AppHeader({
   collapsed,
   setCollapsed,
+  mobileOpen = false,
+  setMobileOpen,
   pageTitle = "Dashboard",
 }: HeaderProps) {
+  const { message } = App.useApp();
   const router = useRouter();
   const isMobile = useMobile();
   const { user, logout } = useAuth();
+  console.log("🚀 ~ AppHeader ~ user:", user);
 
   async function handleLogout() {
     await logout();
@@ -42,11 +49,14 @@ export default function AppHeader({
       key: "1",
       icon: <UserOutlined />,
       label: (
-        <span onClick={() => router.push("/dashboard/profile")}>{user?.email || "Profile"}</span>
+        <span onClick={() => router.push("/dashboard/profile")}>
+          {user?.name || user?.email || "Profile"}
+        </span>
       ),
     },
     {
       key: "password",
+      icon: <EditOutlined />,
       label: <span onClick={() => router.push("/dashboard/change-password")}>Change Password</span>,
     },
     {
@@ -61,10 +71,9 @@ export default function AppHeader({
 
   return (
     <Header
+      className="dashboard-header"
       style={{
         padding: 0,
-        background: "#ffffff",
-        boxShadow: "0 0 3px rgba(0, 0, 0, 0.05)",
         display: "flex",
         alignItems: "center",
         justifyContent: "space-between",
@@ -79,8 +88,18 @@ export default function AppHeader({
         {/* Sidebar Toggle */}
         <Button
           type="link"
-          icon={collapsed ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />}
-          onClick={() => setCollapsed(!collapsed)}
+          aria-label={isMobile ? "Open sidebar" : collapsed ? "Expand sidebar" : "Collapse sidebar"}
+          aria-expanded={isMobile ? mobileOpen : !collapsed}
+          icon={
+            (isMobile ? !mobileOpen : collapsed) ? <MenuUnfoldOutlined /> : <MenuFoldOutlined />
+          }
+          onClick={() => {
+            if (isMobile) {
+              setMobileOpen?.(!mobileOpen);
+            } else {
+              setCollapsed(!collapsed);
+            }
+          }}
           style={{
             fontSize: "16px",
             width: 64,
