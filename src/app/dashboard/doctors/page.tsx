@@ -1,8 +1,9 @@
 "use client";
 
-import CreateDoctorForm from "@/components/doctor/create-doctor-form";
-import Table from "@/components/ui/data-table";
-import ModalComponent from "@/components/ui/modal";
+import DoctorHeader from "@/components/doctor/doctor-header";
+import DoctorFilters from "@/components/doctor/doctor-filters";
+import DoctorFilterDrawer from "@/components/doctor/doctor-filter-drawer";
+import DoctorTable from "@/components/doctor/doctor-table";
 import { useDebounced } from "@/hooks/use-debounce";
 import { useGetDoctorsQuery } from "@/redux/features/doctor/doctorApi";
 import {
@@ -11,53 +12,17 @@ import {
   type DoctorSortBy,
   type DoctorSortOrder,
   type DoctorsQueryParams,
-  type TDoctor,
 } from "@/types/doctor";
-
 import { apiErrorMessage } from "@/utils/api-error";
-import { EditOutlined, EyeOutlined, PlusOutlined, SearchOutlined } from "@ant-design/icons";
-import { Alert, Button, Input, Select, Space, Tag, Tooltip } from "antd";
-import type { ColumnsType } from "antd/es/table";
+import { Alert, Button } from "antd";
 import { useState } from "react";
+import ErrorBounderCom from "@/components/shared/ErrorBounder";
 
-const specializationLabel = (value: SPECIALIZATION) =>
-  value === SPECIALIZATION.ENT
-    ? "ENT"
-    : value
-        .toLowerCase()
-        .split("_")
-        .map((word) => word[0].toUpperCase() + word.slice(1))
-        .join(" ");
-
-const sortOptions: { value: DoctorSortBy; label: string }[] = [
-  { value: "createdAt", label: "Created At" },
-  { value: "updatedAt", label: "Updated At" },
-  { value: "name", label: "Doctor Name" },
-  { value: "specialization", label: "Specialization" },
-  { value: "hospital", label: "Hospital" },
-];
-const renderEllipsis = (value: string | number | null | undefined) => {
-  const text = value === null || value === undefined || value === "" ? "—" : String(value);
-
-  return (
-    <Tooltip title={text}>
-      <div
-        style={{
-          overflow: "hidden",
-          textOverflow: "ellipsis",
-          whiteSpace: "nowrap",
-          width: "100%",
-        }}
-      >
-        {text}
-      </div>
-    </Tooltip>
-  );
-};
 export default function DoctorsPage() {
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10);
   const [searchTerm, setSearchTerm] = useState("");
+  const [filterOpen, setFilterOpen] = useState(false);
 
   const [specialization, setSpecialization] = useState<SPECIALIZATION>();
   const [isActive, setIsActive] = useState<boolean>();
@@ -94,141 +59,6 @@ export default function DoctorsPage() {
       if (order !== sortOrder) setPage(1);
     }
   };
-  const sortState = (field: DoctorSortBy) => ({
-    sorter: true,
-    sortOrder:
-      sortBy === field ? (sortOrder === "asc" ? ("ascend" as const) : ("descend" as const)) : null,
-  });
-
-  const columns: ColumnsType<TDoctor> = [
-    {
-      title: "Doctor Name",
-      dataIndex: "name",
-      key: "name",
-      width: 180,
-      ...sortState("name"),
-      render: renderEllipsis,
-    },
-    {
-      title: "Specialization",
-      dataIndex: "specialization",
-      key: "specialization",
-      width: 170,
-      ...sortState("specialization"),
-      render: (value: SPECIALIZATION) => {
-        const label = specializationLabel(value);
-
-        return (
-          <Tooltip title={label}>
-            <div
-              style={{
-                overflow: "hidden",
-                textOverflow: "ellipsis",
-                whiteSpace: "nowrap",
-                width: "100%",
-              }}
-            >
-              {label}
-            </div>
-          </Tooltip>
-        );
-      },
-    },
-    {
-      title: "Hospital",
-      dataIndex: "hospital",
-      key: "hospital",
-      width: 200,
-      ...sortState("hospital"),
-      render: renderEllipsis,
-    },
-    {
-      title: "Phone",
-      dataIndex: "phone",
-      key: "phone",
-      width: 140,
-      render: renderEllipsis,
-    },
-    {
-      title: "Patients",
-      dataIndex: "patientsCount",
-      key: "patientsCount",
-      width: 100,
-      render: renderEllipsis,
-    },
-    {
-      title: "Status",
-      dataIndex: "isActive",
-      key: "isActive",
-      width: 110,
-      render: (active: boolean) => {
-        const status = active ? "Active" : "Inactive";
-
-        return (
-          <Tooltip title={status}>
-            <Tag color={active ? "green" : "red"}>{status}</Tag>
-          </Tooltip>
-        );
-      },
-    },
-    {
-      title: "Created At",
-      dataIndex: "createdAt",
-      key: "createdAt",
-      width: 190,
-      ...sortState("createdAt"),
-      render: (value: string) => {
-        const date = new Date(value);
-        const text = Number.isNaN(date.getTime()) ? "—" : date.toLocaleString();
-
-        return (
-          <Tooltip title={text}>
-            <div
-              style={{
-                overflow: "hidden",
-                textOverflow: "ellipsis",
-                whiteSpace: "nowrap",
-                width: "100%",
-              }}
-            >
-              {text}
-            </div>
-          </Tooltip>
-        );
-      },
-    },
-    {
-      title: "Actions",
-      key: "actions",
-      width: 110,
-      fixed: "right",
-      align: "center",
-      render: (_, record) => (
-        <Space size={4}>
-          <Tooltip title="View">
-            <Button
-              type="text"
-              icon={<EyeOutlined />}
-              onClick={() => {
-                console.log("View doctor:", record);
-              }}
-            />
-          </Tooltip>
-
-          <Tooltip title="Edit">
-            <Button
-              type="text"
-              icon={<EditOutlined />}
-              onClick={() => {
-                console.log("Edit doctor:", record);
-              }}
-            />
-          </Tooltip>
-        </Space>
-      ),
-    },
-  ];
-
   const resetFilters = () => {
     setSearchTerm("");
 
@@ -239,135 +69,62 @@ export default function DoctorsPage() {
     setPage(1);
   };
 
+  const filterProps = {
+    specialization,
+    isActive,
+    sortBy,
+    sortOrder,
+    setSpecialization,
+    setIsActive,
+    setPage,
+    changeSortBy,
+    changeSortOrder,
+    resetFilters,
+  };
+
   return (
-    <div className="min-h-screen bg-transparent p-4 sm:p-6">
-      <div className="mb-2 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h2 className="text-2xl font-bold tracking-tight text-gray-900 sm:text-3xl">
-            Doctor Management
-          </h2>
-        </div>
-        <ModalComponent
-          width={500}
-          button={
-            <button
-              type="button"
-              className="inline-flex w-fit items-center justify-center gap-2 rounded-lg bg-orange-500 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-all duration-200 hover:bg-orange-600 hover:shadow-md active:scale-[0.98]"
-            >
-              <PlusOutlined className="text-base" />
-              Create Doctor
-            </button>
-          }
-        >
-          <CreateDoctorForm />
-        </ModalComponent>
-      </div>
-      <div className="space-y-4">
-        <div className="rounded-xl border border-slate-200 bg-white p-3 shadow-sm shadow-blue-200">
-          <div className="flex flex-col gap-3 xl:flex-row xl:items-center">
-            <Input
-              aria-label="Search doctors"
-              placeholder="Search name, doctors, hospitals..."
-              allowClear
-              prefix={<SearchOutlined className="text-slate-400" />}
-              value={searchTerm}
-              className="xl:min-w-[280px] xl:flex-1"
-              onChange={(event) => {
-                setSearchTerm(event.target.value);
-                setPage(1);
-              }}
+    <ErrorBounderCom>
+      <div className="min-h-screen bg-transparent p-2 sm:p-6">
+        <DoctorHeader filterOpen={filterOpen} onOpenFilters={() => setFilterOpen(true)} />
+        <div className="space-y-2 sm:space-y-4">
+          <DoctorFilters searchTerm={searchTerm} setSearchTerm={setSearchTerm} {...filterProps} />
+          {error && !isDebouncing && (
+            <Alert
+              type="error"
+              showIcon
+              message={apiErrorMessage(error, "Unable to load doctors.")}
+              action={
+                <Button size="small" onClick={() => refetch()}>
+                  Retry
+                </Button>
+              }
             />
+          )}
 
-            <Select<SPECIALIZATION>
-              aria-label="Specialization"
-              placeholder="All Specializations"
-              allowClear
-              value={specialization}
-              className="w-full xl:w-[210px]"
-              options={Object.values(SPECIALIZATION).map((value) => ({
-                value,
-                label: specializationLabel(value),
-              }))}
-              onChange={(value) => {
-                setSpecialization(value);
-                setPage(1);
-              }}
-            />
-
-            <Select
-              aria-label="Active status"
-              value={isActive === undefined ? "all" : isActive ? "active" : "inactive"}
-              className="w-full xl:w-[150px]"
-              options={[
-                { value: "all", label: "All Status" },
-                { value: "active", label: "Active" },
-                { value: "inactive", label: "Inactive" },
-              ]}
-              onChange={(value) => {
-                setIsActive(value === "all" ? undefined : value === "active");
-                setPage(1);
-              }}
-            />
-
-            <Select<DoctorSortBy>
-              aria-label="Sort by"
-              value={sortBy}
-              options={sortOptions}
-              onChange={changeSortBy}
-              className="w-full xl:w-[170px]"
-            />
-
-            <Select<DoctorSortOrder>
-              aria-label="Sort order"
-              value={sortOrder}
-              options={[
-                { value: "asc", label: "Ascending" },
-                { value: "desc", label: "Descending" },
-              ]}
-              onChange={changeSortOrder}
-              className="w-full xl:w-[150px]"
-            />
-
-            <Button onClick={resetFilters} className="w-full xl:w-auto">
-              Reset
-            </Button>
-          </div>
-        </div>
-
-        {error && !isDebouncing && (
-          <Alert
-            type="error"
-            showIcon
-            message={apiErrorMessage(error, "Unable to load doctors.")}
-            action={
-              <Button size="small" onClick={() => refetch()}>
-                Retry
-              </Button>
-            }
-          />
-        )}
-
-        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-lg shadow-blue-200">
-          <Table<TDoctor>
-            data={data?.data ?? []}
+          <DoctorTable
+            doctors={data?.data ?? []}
             meta={data?.meta}
-            columns={columns}
             isLoading={isLoading}
             isFetching={isFetching || isDebouncing}
             page={page}
             setPage={setPage}
             limit={limit}
             setLimit={setLimit}
-            setSortBy={changeSortBy}
-            setSortOrder={changeSortOrder}
-            rowKey="_id"
+            sortBy={sortBy}
+            sortOrder={sortOrder}
+            changeSortBy={changeSortBy}
+            changeSortOrder={changeSortOrder}
           />
         </div>
+        <DoctorFilterDrawer
+          open={filterOpen}
+          onClose={() => setFilterOpen(false)}
+          filters={filterProps}
+        />
+        <div className="mt-4 text-xs text-gray-400">
+          Sort: {sortBy} / {sortOrder}
+        </div>
       </div>
-
-      <div className="mt-4 text-xs text-gray-400">
-        Sort: {sortBy} / {sortOrder}
-      </div>
-    </div>
+    </ErrorBounderCom>
   );
 }

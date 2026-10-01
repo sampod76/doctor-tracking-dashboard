@@ -17,15 +17,6 @@ export default function DashLayout({ children }: { children: React.ReactNode }) 
   const pathname = usePathname();
 
   // Get page title from pathname
-  const getPageTitle = () => {
-    const path = pathname.split("/").filter(Boolean);
-    if (path.length === 1 && path[0] === "dashboard") {
-      return "Dashboard";
-    }
-
-    const lastSegment = path[path.length - 1];
-    return lastSegment.charAt(0).toUpperCase() + lastSegment.slice(1);
-  };
 
   useEffect(() => {
     if (isMobile) {
@@ -88,7 +79,7 @@ export default function DashLayout({ children }: { children: React.ReactNode }) 
           setCollapsed={setCollapsed}
           mobileOpen={mobileOpen}
           setMobileOpen={setMobileOpen}
-          pageTitle={getPageTitle()}
+          pageTitle={"Doctor Tracker"}
         />
         <Content
           className="dashboard-content"

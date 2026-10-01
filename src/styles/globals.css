@@ -343,14 +343,37 @@ body {
 /* ---------------------------
    Table
 ---------------------------- */
+
 .ant-table-wrapper {
   overflow: hidden;
 }
 
+/* Table Header */
 .ant-table-thead > tr > th {
   background-color: #f2f3f5 !important;
   font-weight: 600 !important;
   color: var(--color-text-base) !important;
+
+  /* Compact header */
+  padding: 10px 16px !important;
+  white-space: nowrap;
+  line-height: 22px;
+}
+
+/* Table Body */
+.ant-table-tbody > tr > td {
+  /* Compact row */
+  padding: 9px 16px !important;
+  line-height: 22px;
+  height: auto !important;
+
+  /* Keep data in one line */
+  white-space: nowrap;
+
+  /* Existing row spacing */
+  border-bottom: 4px solid transparent !important;
+
+  transition: background-color 0.2s ease;
 }
 
 .ant-pagination-total-text {
@@ -361,7 +384,6 @@ body {
   padding-left: 0 !important;
   padding-right: 0 !important;
 }
-
 /* ---------------------------
    Pagination
 ---------------------------- */

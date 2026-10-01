@@ -20,8 +20,8 @@ export const sidebarData: SidebarData[] = [
       },
       {
         title: "Patients",
-        key: "/dashboard/patient",
-        url: "/dashboard/patient",
+        key: "/dashboard/patients",
+        url: "/dashboard/patients",
         icon: ContactsTwoTone,
       },
     ],

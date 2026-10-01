@@ -1,6 +1,5 @@
 import type { TMeta, TResponse } from "./global";
 
-
 export enum SPECIALIZATION {
   CARDIOLOGY = "CARDIOLOGY",
   DERMATOLOGY = "DERMATOLOGY",
@@ -66,3 +65,10 @@ export type DoctorsResponse = TResponse<TDoctor[]> & {
   data: TDoctor[];
   meta: TMeta;
 };
+
+// Fields consumed from the detail endpoint; its aggregation omits list patient counts.
+export type DoctorDetails = Pick<
+  TDoctor,
+  "_id" | "name" | "email" | "phone" | "hospital" | "specialization" | "isActive" | "createdAt"
+> &
+  Partial<Pick<TDoctor, "patientsCount">>;

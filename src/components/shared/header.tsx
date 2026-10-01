@@ -35,7 +35,6 @@ export default function AppHeader({
   const router = useRouter();
   const isMobile = useMobile();
   const { user, logout } = useAuth();
-  console.log("🚀 ~ AppHeader ~ user:", user);
 
   async function handleLogout() {
     await logout();
@@ -106,7 +105,7 @@ export default function AppHeader({
             color: "rgba(0, 0, 0, 0.65)",
           }}
         />
-        <h1 className="hidden text-xl font-semibold text-gray-800 md:block">{pageTitle}</h1>
+        <h1 className="mt-2 hidden text-xl font-semibold text-gray-800 md:block">{pageTitle}</h1>
       </div>
 
       <div
