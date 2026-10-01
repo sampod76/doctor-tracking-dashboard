@@ -1,10 +1,12 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  eslint: { ignoreDuringBuilds: true },
-  typescript: { ignoreBuildErrors: true },
+  eslint: { ignoreDuringBuilds: false },
+  typescript: { ignoreBuildErrors: false },
   productionBrowserSourceMaps: false,
-  output: "standalone",
-  
+  // Standalone tracing uses symlinks unavailable on ordinary Windows accounts.
+  // Keep standalone output for the Linux Docker deployment.
+  output: process.platform === "win32" ? undefined : "standalone",
+
   images: {
     deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048, 3840],
     imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
@@ -17,17 +19,6 @@ const nextConfig = {
 
   env: {
     BASE_URL: process.env.NEXT_PUBLIC_BASE_URL,
-    BASE_URL_PROD: process.env.NEXT_PUBLIC_BASE_URL_PROD,
-    FRONT_BASE_URL: process.env.NEXT_PUBLIC_FRONT_URL,
-    FRONT_BASE_URL_PROD: process.env.NEXT_PUBLIC_FRONT_URL_PROD,
-    AWS_BASE_URL: process.env.NEXT_PUBLIC_AWS_BASE_URL,
-    AWS_BASE_URL_PROD: process.env.NEXT_PUBLIC_AWS_BASE_URL_PROD,
-    AWS_CDN: process.env.NEXT_PUBLIC_AWS_CDN_URL,
-    AUTH_SECRET: process.env.AUTH_SECRET,
-    GOOGLE_CLIENT_ID: process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID,
-    NEXT_CRYPTO_KEY: process.env.NEXT_CRYPTO_KEY,
-    NEXT_PUBLIC_PUSHER_KEY: process.env.NEXT_PUBLIC_PUSHER_KEY,
-    NEXT_PUBLIC_PUSHER_CLUSTER: process.env.NEXT_PUBLIC_PUSHER_CLUSTER,
   },
 
   trailingSlash: false,

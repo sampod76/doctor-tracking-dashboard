@@ -1,17 +1,15 @@
 "use client";
 
-import { useSession } from "@/provider/session-provider";
-import { signout } from "@/service/auth";
+import useAuth from "@/hooks/useAuth";
+
 import { Button, message, Result } from "antd";
 import Link from "next/link";
 
 export default function ForbiddenPage() {
-  const { setIsLoading } = useSession();
+  const { logout } = useAuth();
 
   async function handleLogout() {
-    setIsLoading(true);
-    localStorage.clear();
-    await signout();
+    await logout();
     message.success("Logged out successfully");
   }
 
@@ -29,7 +27,7 @@ export default function ForbiddenPage() {
         title="403"
         subTitle="Sorry, you are not authorized to access this page."
         extra={
-          <div className="flex justify-center items-center gap-4">
+          <div className="flex items-center justify-center gap-4">
             <Link href={"/dashboard"}>
               <Button type="primary">Back Home</Button>
             </Link>

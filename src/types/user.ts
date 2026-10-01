@@ -5,26 +5,26 @@
  * projects should extend these types as the new domain requires.
  */
 export interface UserPermissions {
-    allPermission: {
-        id: string;
-        module_permission: ModulePermission;
-    }[];
-    allModules: {
-        id: string;
-        label: string;
-        value: string;
-    }[];
+  allPermission: {
+    id: string;
+    module_permission: ModulePermission;
+  }[];
+  allModules: {
+    id: string;
+    label: string;
+    value: string;
+  }[];
 }
 
 export interface ModulePermission {
-    id: string;
-    label: string;
-    value: string;
-    module: Module;
+  id: string;
+  label: string;
+  value: string;
+  module: Module;
 }
 
 export interface Module {
-    id: string;
-    label: string;
-    value: string;
+  id: string;
+  label: string;
+  value: string;
 }

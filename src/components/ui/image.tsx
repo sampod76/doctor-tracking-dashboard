@@ -4,35 +4,34 @@ import fileObjectToLink from "@/utils/fileObjectToLink";
 import NextImage from "next/image";
 
 type ImageTagProps = {
-    src: TFileDocument | string | null | undefined;
-    width?: number;
-    height?: number;
-    alt?: string;
-    preview?: boolean;
-    className?: string;
-    style?: React.CSSProperties;
+  src: TFileDocument | string | null | undefined;
+  width?: number;
+  height?: number;
+  alt?: string;
+  preview?: boolean;
+  className?: string;
+  style?: React.CSSProperties;
 };
 
 export default function CustomImage({
-    src,
-    width,
-    height,
-    alt,
-    className,
-    style,
-    ...props
+  src,
+  width,
+  height,
+  alt,
+  className,
+  style,
+  ...props
 }: ImageTagProps) {
-
-    return (
-        <NextImage
-            src={fileObjectToLink(src)}
-            // @ts-ignore
-            alt={alt || src?.filename || "Image"}
-            width={width || 750}
-            height={height || 750}
-            {...props}
-            className={className}
-            style={style || {}}
-        />
-    );
+  return (
+    <NextImage
+      src={fileObjectToLink(src)}
+      // @ts-ignore
+      alt={alt || src?.filename || "Image"}
+      width={width || 750}
+      height={height || 750}
+      {...props}
+      className={className}
+      style={style || {}}
+    />
+  );
 }

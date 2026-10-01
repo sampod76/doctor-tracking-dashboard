@@ -2,5 +2,5 @@
 // Add new domain-specific types here as the project grows.
 
 export * from "./global";
-export * from "./TSession";
+export * from "./auth";
 export * from "./user";

@@ -21,7 +21,7 @@ interface TableProps<TData> {
   setFieldsType?: (value: string) => void;
   showSizeChanger?: boolean;
   urlParamsUpdate?: boolean;
-  dataSource?: TData[ ];
+  dataSource?: TData[];
   pagination?: boolean;
 }
 
@@ -65,9 +65,7 @@ export default function Table<TData>({
         return sum; // Handle undefined case
       }, 0);
     const remainingWidth =
-      columnsWithoutWidth > 0
-        ? (100 - totalFixedWidth) / columnsWithoutWidth
-        : 0;
+      columnsWithoutWidth > 0 ? (100 - totalFixedWidth) / columnsWithoutWidth : 0;
     return {
       ...col,
       width: `${remainingWidth}%`,
@@ -121,14 +119,13 @@ export default function Table<TData>({
   };
 
   const paginationConfig = {
-        current: page,
-        pageSize: limit,
-        total: meta?.total || 0,
-        showSizeChanger: showSizeChanger,
-        pageSizeOptions: ["10", "20", "50"],
-        showTotal: (total: any, range: any[]) =>
-          `${range[0]}-${range[1]} of ${total} items`,
-      }
+    current: page,
+    pageSize: limit,
+    total: meta?.total || 0,
+    showSizeChanger: showSizeChanger,
+    pageSizeOptions: ["10", "20", "50"],
+    showTotal: (total: any, range: any[]) => `${range[0]}-${range[1]} of ${total} items`,
+  };
   return (
     <AntdTable
       dataSource={data}

@@ -19,35 +19,35 @@ import createWebStorage from "redux-persist/lib/storage/createWebStorage";
 const createNoopStorage = () => {
   return {
     getItem(_key: string) {
+      void _key;
       return Promise.resolve(null);
     },
-    setItem(_key: string, value: any) {
+    setItem(_key: string, value: string) {
       return Promise.resolve(value);
     },
     removeItem(_key: string) {
+      void _key;
       return Promise.resolve();
     },
   };
 };
 
 // Use noop storage on server, real storage on client
-const storage =
-  typeof window !== "undefined"
-    ? createWebStorage("local")
-    : createNoopStorage();
+const storage = typeof window !== "undefined" ? createWebStorage("local") : createNoopStorage();
 
 const authPersistConfig = {
   key: "auth",
   storage,
+  whitelist: ["user", "accessToken", "refreshToken", "expiresIn"],
 };
 
 const persistedUserReducer = persistReducer(authPersistConfig, authReducer);
 
 export const store = configureStore({
-    reducer: {
-        [baseApi.reducerPath]: baseApi.reducer,
-        auth: persistedUserReducer,
-    },
+  reducer: {
+    [baseApi.reducerPath]: baseApi.reducer,
+    auth: persistedUserReducer,
+  },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({
       serializableCheck: {

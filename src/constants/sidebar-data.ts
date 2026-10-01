@@ -7,21 +7,20 @@ import { AppstoreAddOutlined } from "@ant-design/icons";
  * full old travel/news domain menu. Future projects should extend
  * `items` here as new features are added.
  *
- * Items use a generic permission string ("dashboard.view") so the
- * existing permission guard/middleware pipeline keeps working.
+ * Authentication is checked by the dashboard layout; optional menu roles
+ * use the backend role values.
  */
 export const sidebarData: SidebarData[] = [
-    {
-        title: "General",
-        key: "General",
-        items: [
-            {
-                title: "Dashboard",
-                key: "/dashboard",
-                url: "/dashboard",
-                icon: AppstoreAddOutlined,
-                permission: "dashboard.view",
-            },
-        ],
-    },
+  {
+    title: "General",
+    key: "General",
+    items: [
+      {
+        title: "Dashboard",
+        key: "/dashboard",
+        url: "/dashboard",
+        icon: AppstoreAddOutlined,
+      },
+    ],
+  },
 ];

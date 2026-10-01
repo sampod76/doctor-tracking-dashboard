@@ -84,8 +84,6 @@ export interface TFileDocument {
   medium_image_size?: MediumImageSize;
 }
 
-
-
 export interface ThumbImageSize {
   width: number;
   height: number;

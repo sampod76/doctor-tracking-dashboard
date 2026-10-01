@@ -1,75 +1,22 @@
 "use client";
-
-import { useSession } from "@/provider/session-provider";
-import { getPermissionsCookie } from "@/utils/permissions";
-import { Spin } from "antd";
-import { ReactNode, useEffect, useState } from "react";
-
+import { useAppSelector } from "@/redux/hooks";
+import type { ReactNode } from "react";
 interface PermissionGuardProps {
-    permission?: string | string[]; // Can be a single permission or an array of permissions
-    mode?: "all" | "any"; // If true, the user must have ALL the specified permissions
-    children: ReactNode;
-    fallback?: ReactNode; // Render this if the user doesn't have permission (e.g. null, or a disabled button)
+  permission?: string | string[];
+  mode?: "all" | "any";
+  children: ReactNode;
+  fallback?: ReactNode;
 }
-
+// The current backend exposes roles, but no granular permissions. Fail closed
+// for permission requirements instead of trusting obsolete permission cookies.
 export default function PermissionGuard({
-    permission,
-    mode = "all",
-    children,
-    fallback = null,
+  permission,
+  children,
+  fallback = null,
 }: PermissionGuardProps) {
-    const [hasAccess, setHasAccess] = useState<boolean>(false);
-    const [isMounted, setIsMounted] = useState<boolean>(false);
-    const { session } = useSession();
-
-    const isSuperAdmin =
-        session?.roleCode === "super_admin" ||
-        session?.user_type === "super_admin" ||
-        session?.user_type === "superAdmin";
-
-    useEffect(() => {
-        setIsMounted(true);
-        if (!permission || isSuperAdmin) {
-            setHasAccess(true);
-            return;
-        }
-
-        const userPermissions = getPermissionsCookie();
-        const checkPermission = (perm: string) =>
-            userPermissions[perm] === true;
-
-        if (Array.isArray(permission)) {
-            if (permission.length === 0) {
-                setHasAccess(true);
-            } else if (mode === "all") {
-                setHasAccess(permission.every(checkPermission));
-            } else {
-                setHasAccess(permission.some(checkPermission));
-            }
-        } else {
-            setHasAccess(checkPermission(permission));
-        }
-    }, [permission, mode, isSuperAdmin]);
-
-    if (isSuperAdmin) {
-        return <>{children}</>;
-    }
-
-    // Prevent hydration mismatch since permissions are read from cookies on client side
-    if (!isMounted) {
-        return (
-            <Spin
-                size="small"
-                spinning={isMounted}
-                tip="Loading permissions..."
-            />
-        );
-    }
-
-    if (!hasAccess) {
-        return <>{fallback}</>;
-    }
-
-    return <>{children}</>;
+  const token = useAppSelector((state) => state.auth.accessToken);
+  const requiresPermission = Array.isArray(permission)
+    ? permission.length > 0
+    : Boolean(permission);
+  return <>{token && !requiresPermission ? children : fallback}</>;
 }
-
