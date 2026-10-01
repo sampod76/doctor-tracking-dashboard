@@ -1,6 +1,8 @@
 "use client";
 
+import CreateDoctorForm from "@/components/doctor/create-doctor-form";
 import Table from "@/components/ui/data-table";
+import ModalComponent from "@/components/ui/modal";
 import { useDebounced } from "@/hooks/use-debounce";
 import { useGetDoctorsQuery } from "@/redux/features/doctor/doctorApi";
 import {
@@ -13,7 +15,7 @@ import {
 } from "@/types/doctor";
 
 import { apiErrorMessage } from "@/utils/api-error";
-import { EditOutlined, EyeOutlined, SearchOutlined } from "@ant-design/icons";
+import { EditOutlined, EyeOutlined, PlusOutlined, SearchOutlined } from "@ant-design/icons";
 import { Alert, Button, Input, Select, Space, Tag, Tooltip } from "antd";
 import type { ColumnsType } from "antd/es/table";
 import { useState } from "react";
@@ -56,22 +58,20 @@ export default function DoctorsPage() {
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10);
   const [searchTerm, setSearchTerm] = useState("");
-  const [hospital, setHospital] = useState("");
+
   const [specialization, setSpecialization] = useState<SPECIALIZATION>();
   const [isActive, setIsActive] = useState<boolean>();
   const [sortBy, setSortBy] = useState<DoctorSortBy>("createdAt");
   const [sortOrder, setSortOrder] = useState<DoctorSortOrder>("desc");
   const debouncedSearch = useDebounced({ searchQuery: searchTerm, delay: 350 });
-  const debouncedHospital = useDebounced({ searchQuery: hospital, delay: 350 });
+
   const params: DoctorsQueryParams = { page, limit, sortBy, sortOrder };
   // Clearing a text filter takes effect immediately, including when resetting filters.
   if (searchTerm.trim() && debouncedSearch.trim()) params.searchTerm = debouncedSearch.trim();
-  if (hospital.trim() && debouncedHospital.trim()) params.hospital = debouncedHospital.trim();
+
   if (specialization !== undefined) params.specialization = specialization;
   if (isActive !== undefined) params.isActive = isActive;
-  const isDebouncing =
-    (Boolean(searchTerm.trim()) && searchTerm !== debouncedSearch) ||
-    (Boolean(hospital.trim()) && hospital !== debouncedHospital);
+  const isDebouncing = Boolean(searchTerm.trim()) && searchTerm !== debouncedSearch;
   const {
     currentData: data,
     isLoading,
@@ -231,7 +231,7 @@ export default function DoctorsPage() {
 
   const resetFilters = () => {
     setSearchTerm("");
-    setHospital("");
+
     setSpecialization(undefined);
     setIsActive(undefined);
     setSortBy("createdAt");
@@ -241,13 +241,30 @@ export default function DoctorsPage() {
 
   return (
     <div className="min-h-screen bg-transparent p-4 sm:p-6">
-      <div className="mb-6 space-y-1">
-        <h2 className="text-3xl font-bold text-gray-900">Doctors List</h2>
+      <div className="mb-2 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h2 className="text-2xl font-bold tracking-tight text-gray-900 sm:text-3xl">
+            Doctor Management
+          </h2>
+        </div>
+        <ModalComponent
+          width={500}
+          button={
+            <button
+              type="button"
+              className="inline-flex w-fit items-center justify-center gap-2 rounded-lg bg-orange-500 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-all duration-200 hover:bg-orange-600 hover:shadow-md active:scale-[0.98]"
+            >
+              <PlusOutlined className="text-base" />
+              Create Doctor
+            </button>
+          }
+        >
+          <CreateDoctorForm />
+        </ModalComponent>
       </div>
       <div className="space-y-4">
         <div className="rounded-xl border border-slate-200 bg-white p-3 shadow-sm shadow-blue-200">
           <div className="flex flex-col gap-3 xl:flex-row xl:items-center">
-            {/* Search */}
             <Input
               aria-label="Search doctors"
               placeholder="Search name, doctors, hospitals..."
@@ -261,7 +278,6 @@ export default function DoctorsPage() {
               }}
             />
 
-            {/* Specialization */}
             <Select<SPECIALIZATION>
               aria-label="Specialization"
               placeholder="All Specializations"
@@ -278,7 +294,6 @@ export default function DoctorsPage() {
               }}
             />
 
-            {/* Status */}
             <Select
               aria-label="Active status"
               value={isActive === undefined ? "all" : isActive ? "active" : "inactive"}
@@ -294,7 +309,6 @@ export default function DoctorsPage() {
               }}
             />
 
-            {/* Sort By */}
             <Select<DoctorSortBy>
               aria-label="Sort by"
               value={sortBy}
@@ -303,7 +317,6 @@ export default function DoctorsPage() {
               className="w-full xl:w-[170px]"
             />
 
-            {/* Sort Order */}
             <Select<DoctorSortOrder>
               aria-label="Sort order"
               value={sortOrder}
@@ -315,7 +328,6 @@ export default function DoctorsPage() {
               className="w-full xl:w-[150px]"
             />
 
-            {/* Reset */}
             <Button onClick={resetFilters} className="w-full xl:w-auto">
               Reset
             </Button>
@@ -349,11 +361,10 @@ export default function DoctorsPage() {
             setSortBy={changeSortBy}
             setSortOrder={changeSortOrder}
             rowKey="_id"
-            urlParamsUpdate={false}
           />
         </div>
       </div>
-      {/* Display the active backend sort. */}
+
       <div className="mt-4 text-xs text-gray-400">
         Sort: {sortBy} / {sortOrder}
       </div>

@@ -11,7 +11,6 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         <div className="grid w-full max-w-6xl overflow-hidden rounded-2xl bg-white shadow-xl lg:grid-cols-2">
           <section className="flex items-center justify-center px-6 py-8 sm:px-10 sm:py-10 lg:min-h-[660px] lg:px-14 lg:py-12">
             <div className="w-full max-w-md">
-              {/* Logo */}
               <Link href="/" className="flex justify-center" aria-label="Doctor Tracker Home">
                 <Image
                   src="/auth-logo.png"
@@ -23,12 +22,10 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                 />
               </Link>
 
-              {/* Page Content */}
               {children}
             </div>
           </section>
 
-          {/* Right Side - Banner */}
           <section className="relative hidden min-h-[660px] overflow-hidden lg:block">
             <Image
               src="/auth-banner.jpg"
@@ -39,10 +36,8 @@ export default function Layout({ children }: { children: React.ReactNode }) {
               className="object-cover"
             />
 
-            {/* Soft Overlay */}
             <div className="absolute inset-0 bg-gradient-to-br from-orange-400/5 via-transparent to-orange-900/10" />
 
-            {/* Bottom Glass Content */}
             <div className="absolute inset-x-0 bottom-0 p-8 xl:p-10">
               <div className="rounded-2xl border border-white/30 bg-white/20 p-5 shadow-lg backdrop-blur-md">
                 <h2 className="text-xl font-semibold text-slate-900 xl:text-2xl">

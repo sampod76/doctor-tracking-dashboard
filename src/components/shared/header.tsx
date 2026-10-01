@@ -85,7 +85,6 @@ export default function AppHeader({
       }}
     >
       <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-        {/* Sidebar Toggle */}
         <Button
           type="link"
           aria-label={isMobile ? "Open sidebar" : collapsed ? "Expand sidebar" : "Collapse sidebar"}
@@ -118,7 +117,6 @@ export default function AppHeader({
           gap: "12px",
         }}
       >
-        {/* User Menu */}
         <Dropdown menu={{ items: userMenuItems }} placement="bottomRight" trigger={["click"]}>
           <div
             style={{ padding: "0 5px" }}

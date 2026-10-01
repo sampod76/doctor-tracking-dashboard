@@ -19,7 +19,6 @@ export type TMeta = {
   limit: number;
   page: number;
   total: number;
- 
 };
 
 export type TResponse<T> = {

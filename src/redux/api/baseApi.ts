@@ -1,80 +1,137 @@
 import config from "@/config";
-import { tags, userTags } from "@/constants";
 import { login, logout } from "@/redux/features/auth/authSlice";
 import type { AuthState, RefreshTokenResponse } from "@/types/auth";
-import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
-import type { BaseQueryFn, FetchArgs, FetchBaseQueryError } from "@reduxjs/toolkit/query/react";
+import {
+  createApi,
+  fetchBaseQuery,
+  type BaseQueryFn,
+  type FetchArgs,
+  type FetchBaseQueryError,
+} from "@reduxjs/toolkit/query/react";
 import { Mutex } from "async-mutex";
-const rawQuery = fetchBaseQuery({
+
+import { tagTypesList } from "../tag-types";
+
+const mutex = new Mutex();
+
+const rawBaseQuery = fetchBaseQuery({
   baseUrl: `${config.host}/api/v1`,
+
   prepareHeaders: (headers, { getState }) => {
-    const token = (getState() as { auth: AuthState }).auth.accessToken;
-    if (token) headers.set("authorization", `Bearer ${token}`);
+    const { accessToken } = (getState() as { auth: AuthState }).auth;
+
+    if (accessToken) {
+      headers.set("authorization", `Bearer ${accessToken}`);
+    }
 
     return headers;
   },
 });
-const mutex = new Mutex();
-const baseQuery: BaseQueryFn<string | FetchArgs, unknown, FetchBaseQueryError> = async (
-  args,
-  api,
-  options,
-) => {
+
+const getAuthState = (api: Parameters<BaseQueryFn>[1]) =>
+  (api.getState() as { auth: AuthState }).auth;
+
+const baseQueryWithReAuth: BaseQueryFn<
+  string | FetchArgs,
+  unknown,
+  FetchBaseQueryError
+> = async (args, api, extraOptions) => {
   const url = typeof args === "string" ? args : args.url;
-  const publicAuth = url === "/auth/login" || url === "/auth/refresh-token";
-  const auth = () => (api.getState() as { auth: AuthState }).auth;
-  const endSession = () => {
-    api.dispatch(logout());
-    api.dispatch(baseApi.util.resetApiState());
-  };
-  // Wait for a concurrent refresh before sending another authenticated request.
-  if (!publicAuth) await mutex.waitForUnlock();
-  const originalToken = auth().accessToken;
-  let result = await rawQuery(args, api, options);
-  if (publicAuth || result.error?.status !== 401 || !originalToken) return result;
+
+  const isAuthRoute =
+    url === "/auth/login" || url === "/auth/refresh-token";
+
+  // If another request is refreshing the token, wait for it.
+  if (!isAuthRoute) {
+    await mutex.waitForUnlock();
+  }
+
+  const originalAccessToken = getAuthState(api).accessToken;
+
+  let result = await rawBaseQuery(args, api, extraOptions);
+
+  // No need to refresh.
+  if (
+    isAuthRoute ||
+    result.error?.status !== 401 ||
+    !originalAccessToken
+  ) {
+    return result;
+  }
+
   const release = await mutex.acquire();
+
   try {
-    // A concurrent request may already have refreshed (or cleared) this session.
-    if (!auth().accessToken) return result;
-    if (auth().accessToken === originalToken) {
-      const refreshToken = auth().refreshToken;
-      if (!refreshToken) {
-        endSession();
-        return result;
-      }
-      const refreshed = await rawQuery(
-        { url: "/auth/refresh-token", method: "POST", body: { refreshToken } },
-        api,
-        options,
-      );
-      // Do not restore a session after logout or overwrite a new login.
-      if (auth().accessToken !== originalToken || auth().refreshToken !== refreshToken)
-        return result;
-      const response = refreshed.data as RefreshTokenResponse | undefined;
-      if (
-        !response?.success ||
-        !response.data?.accessToken ||
-        !response.data.refreshToken ||
-        !response.data.user ||
-        typeof response.data.expiresIn !== "number"
-      ) {
-        endSession();
-        return result;
-      }
-      api.dispatch(login(response.data));
+    const currentAuth = getAuthState(api);
+
+    // Another request may already have refreshed the token.
+    if (currentAuth.accessToken !== originalAccessToken) {
+      return rawBaseQuery(args, api, extraOptions);
     }
-    // Retry at most once; a second 401 ends the session without another refresh.
-    const retryToken = auth().accessToken;
-    result = await rawQuery(args, api, options);
-    if (result.error?.status === 401 && auth().accessToken === retryToken) endSession();
+
+    const refreshToken = currentAuth.refreshToken;
+
+    if (!refreshToken) {
+      api.dispatch(logout());
+      api.dispatch(baseApi.util.resetApiState());
+
+      return result;
+    }
+
+    const refreshResult = await rawBaseQuery(
+      {
+        url: "/auth/refresh-token",
+        method: "POST",
+        body: { refreshToken },
+      },
+      api,
+      extraOptions,
+    );
+
+    // User may have logged out or logged in again while refresh was running.
+    const latestAuth = getAuthState(api);
+
+    if (
+      latestAuth.accessToken !== originalAccessToken ||
+      latestAuth.refreshToken !== refreshToken
+    ) {
+      return result;
+    }
+
+    const response = refreshResult.data as RefreshTokenResponse | undefined;
+
+    if (
+      !response?.success ||
+      !response.data?.accessToken ||
+      !response.data.refreshToken ||
+      !response.data.user ||
+      typeof response.data.expiresIn !== "number"
+    ) {
+      api.dispatch(logout());
+      api.dispatch(baseApi.util.resetApiState());
+
+      return result;
+    }
+
+    api.dispatch(login(response.data));
+
+    // Retry the original request only once.
+    result = await rawBaseQuery(args, api, extraOptions);
+
+    if (result.error?.status === 401) {
+      api.dispatch(logout());
+      api.dispatch(baseApi.util.resetApiState());
+    }
+
+    return result;
   } finally {
     release();
   }
-  return result;
 };
+
 export const baseApi = createApi({
   reducerPath: "baseApi",
-  baseQuery,
+  baseQuery: baseQueryWithReAuth,
   endpoints: () => ({}),
-  tagTypes: [...Object.values(tags), ...Object.values(userTags)],
+  tagTypes: tagTypesList,
 });

@@ -1,5 +1,6 @@
 import type { TMeta, TResponse } from "./global";
 
+
 export enum SPECIALIZATION {
   CARDIOLOGY = "CARDIOLOGY",
   DERMATOLOGY = "DERMATOLOGY",
@@ -32,7 +33,14 @@ export interface TDoctor {
   updatedAt: string;
   patientsCount: number;
 }
-
+export interface DoctorFormValues {
+  name: string;
+  email: string;
+  password: string;
+  phone: string;
+  hospital: string;
+  specialization: SPECIALIZATION;
+}
 export const DOCTOR_SORT_FIELDS = [
   "createdAt",
   "updatedAt",
