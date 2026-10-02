@@ -1,7 +1,6 @@
 import type { TDoctor } from "./doctor";
 import type { TMeta, TResponse } from "./global";
 
-
 export enum ENUM_GENDER {
   MALE = "MALE",
   FEMALE = "FEMALE",
@@ -74,3 +73,18 @@ export type PatientsResponse = TResponse<TPatient[]> & {
   data: TPatient[];
   meta: TMeta;
 };
+
+export type PatientDetails = Omit<TPatient, "doctor" | "doctorId"> & {
+  doctor?: Pick<
+    TDoctor,
+    "_id" | "name" | "email" | "medicalRegistrationNo" | "specialization" | "hospital" | "isActive"
+  > | null;
+  address?: string;
+  patientComplaint?: string;
+  doctorAdvice?: string;
+  notes?: string;
+  updatedAt?: string;
+  isDeleted?: boolean;
+  deletedAt?: string | null;
+};
+export type UpdatePatientPayload = Partial<CreatePatientPayload>;

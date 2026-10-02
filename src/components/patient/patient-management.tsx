@@ -1,7 +1,8 @@
 "use client";
 
 import PatientHeader from "@/components/patient/patient-header";
-import PatientCreateModal from "./patient-create-modal";
+import PatientForm from "./patient-form";
+import ModalComponent from "@/components/ui/modal";
 import PatientFilters, {
   type DoctorOption,
   type PatientFilterValuesProps,
@@ -26,6 +27,7 @@ import { useState } from "react";
 
 export default function PatientManagement({ doctorId: providedDoctorId }: { doctorId?: string }) {
   const [createOpen, setCreateOpen] = useState(false);
+  const [formLoading, setFormLoading] = useState(false);
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10);
   const [searchTerm, setSearchTerm] = useState("");
@@ -194,9 +196,18 @@ export default function PatientManagement({ doctorId: providedDoctorId }: { doct
         onClose={() => setFilterOpen(false)}
         filters={filterProps}
       />
-      {createOpen && (
-        <PatientCreateModal doctorId={providedDoctorId} onClose={() => setCreateOpen(false)} />
-      )}
+      <ModalComponent
+        destroyOnClose
+        open={createOpen}
+        onOpenChange={(open) => {
+          setCreateOpen(open);
+          if (!open) setFormLoading(false);
+        }}
+        width={640}
+        loading={formLoading}
+      >
+        {createOpen && <PatientForm doctorId={providedDoctorId} onLoadingChange={setFormLoading} />}
+      </ModalComponent>
     </section>
   );
 }

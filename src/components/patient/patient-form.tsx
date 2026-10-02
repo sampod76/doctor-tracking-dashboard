@@ -1,25 +1,23 @@
 "use client";
 
-import { useState } from "react";
-import {
-  App,
-  Button,
-  DatePicker,
-  Form,
-  Input,
-  InputNumber,
-  Modal,
-  Select,
-  Spin,
-  Tooltip,
-} from "antd";
-import type { Dayjs } from "dayjs";
+import { useEffect, useId, useState } from "react";
+import { App, Button, DatePicker, Form, Input, InputNumber, Select, Spin, Tooltip } from "antd";
+import dayjs, { type Dayjs } from "dayjs";
 import { useDebounced } from "@/hooks/use-debounce";
 import { useGetDoctorsQuery } from "@/redux/features/doctor/doctorApi";
-import { useCreatePatientMutation } from "@/redux/features/patient/patientApi";
-import { ENUM_GENDER, TREATMENT_STATUS, type CreatePatientPayload } from "@/types/patient";
+import {
+  useCreatePatientMutation,
+  useUpdatePatientMutation,
+} from "@/redux/features/patient/patientApi";
+import {
+  ENUM_GENDER,
+  TREATMENT_STATUS,
+  type CreatePatientPayload,
+  type PatientDetails,
+} from "@/types/patient";
 import { apiErrorMessage } from "@/utils/api-error";
 import { formatEnumLabel, renderDoctorRelationTooltip } from "./patient-table-columns";
+import { useModal } from "@/components/ui/modal";
 import type { DoctorOption } from "./patient-filters";
 
 type PatientFormValues = Omit<CreatePatientPayload, "doctorId" | "lastVisitAt" | "followUpDate"> & {
@@ -28,14 +26,18 @@ type PatientFormValues = Omit<CreatePatientPayload, "doctorId" | "lastVisitAt" |
   followUpDate?: Dayjs | null;
 };
 
-export default function PatientCreateModal({
+export default function PatientForm({
   doctorId,
-  onClose,
+  onLoadingChange,
+  patient,
 }: {
   doctorId?: string;
-  onClose: () => void;
+  patient?: PatientDetails;
+  onLoadingChange?: (loading: boolean) => void;
 }) {
   const [form] = Form.useForm<PatientFormValues>();
+  const formId = useId();
+  const { closeModal } = useModal();
   const { message } = App.useApp();
   const [search, setSearch] = useState("");
   const [selectedDoctor, setSelectedDoctor] = useState<DoctorOption>();
@@ -58,7 +60,12 @@ export default function PatientCreateModal({
   }));
   if (selectedDoctor && !options.some((option) => option.value === selectedDoctor.value))
     options.unshift(selectedDoctor);
-  const [createPatient, { isLoading }] = useCreatePatientMutation();
+  const [createPatient, { isLoading: isCreating }] = useCreatePatientMutation();
+  const [updatePatient, { isLoading: isUpdating }] = useUpdatePatientMutation();
+  const isLoading = isCreating || isUpdating;
+  useEffect(() => {
+    onLoadingChange?.(isLoading);
+  }, [isLoading, onLoadingChange]);
   const reset = () => {
     form.resetFields();
     setSearch("");
@@ -67,7 +74,7 @@ export default function PatientCreateModal({
   const close = () => {
     if (isLoading) return;
     reset();
-    onClose();
+    closeModal();
   };
   const submit = async (values: PatientFormValues) => {
     const assignedDoctorId = doctorId ?? values.doctorId;
@@ -82,35 +89,49 @@ export default function PatientCreateModal({
       followUpDate: values.followUpDate?.format("YYYY-MM-DD") ?? null,
     };
     try {
-      const response = await createPatient(payload).unwrap();
+      const response = patient
+        ? await updatePatient({ id: patient._id, body: payload }).unwrap()
+        : await createPatient(payload).unwrap();
       if (!response.success) {
-        message.error(response.message || "Failed to create patient");
+        message.error(
+          response.message || (patient ? "Failed to update patient" : "Failed to create patient"),
+        );
         return;
       }
-      message.success("Patient created successfully");
+      message.success(patient ? "Patient updated successfully" : "Patient created successfully");
       reset();
-      onClose();
+      closeModal();
     } catch (error: unknown) {
-      message.error(apiErrorMessage(error, "Failed to create patient"));
+      message.error(
+        apiErrorMessage(error, patient ? "Failed to update patient" : "Failed to create patient"),
+      );
     }
   };
   return (
-    <Modal
-      title="Add Patient"
-      open
-      onCancel={close}
-      footer={null}
-      width={640}
-      closable={!isLoading}
-      maskClosable={!isLoading}
-      keyboard={!isLoading}
-    >
+    <>
+      <h2 className="mb-4 text-lg font-semibold">{patient ? "Edit Patient" : "Add Patient"}</h2>
       <Form<PatientFormValues>
+        name={formId}
         form={form}
         layout="vertical"
         onFinish={submit}
         disabled={isLoading}
-        initialValues={{ treatmentStatus: TREATMENT_STATUS.ACTIVE }}
+        initialValues={
+          patient
+            ? {
+                ...patient,
+                doctorId: patient.doctor?._id,
+                lastVisitAt:
+                  patient.lastVisitAt && dayjs(patient.lastVisitAt).isValid()
+                    ? dayjs(patient.lastVisitAt)
+                    : null,
+                followUpDate:
+                  patient.followUpDate && dayjs(patient.followUpDate).isValid()
+                    ? dayjs(patient.followUpDate)
+                    : null,
+              }
+            : { treatmentStatus: TREATMENT_STATUS.ACTIVE }
+        }
       >
         <Form.Item
           name="name"
@@ -196,14 +217,14 @@ export default function PatientCreateModal({
                 <Tooltip
                   title={renderDoctorRelationTooltip({ ...option.data, name: option.data.label })}
                 >
-                  <span>{option.data.label || "—"}</span>
+                  <span>{option.data.label || "â€”"}</span>
                 </Tooltip>
               )}
               labelRender={(option) => {
                 const doctor = options.find((item) => item.value === option.value);
                 return doctor ? (
                   <Tooltip title={renderDoctorRelationTooltip({ ...doctor, name: doctor.label })}>
-                    <span>{doctor.label || "—"}</span>
+                    <span>{doctor.label || "â€”"}</span>
                   </Tooltip>
                 ) : (
                   option.label
@@ -280,10 +301,10 @@ export default function PatientCreateModal({
             loading={isLoading}
             className="bg-orange-500 hover:!bg-orange-600"
           >
-            Create Patient
+            {patient ? "Save Changes" : "Create Patient"}
           </Button>
         </div>
       </Form>
-    </Modal>
+    </>
   );
 }

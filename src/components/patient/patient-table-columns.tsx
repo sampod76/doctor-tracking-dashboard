@@ -1,5 +1,10 @@
-import { EyeOutlined } from "@ant-design/icons";
-import { Button, Tag, Tooltip } from "antd";
+"use client";
+import Link from "next/link";
+import { useRef } from "react";
+import { useDeletePatientMutation } from "@/redux/features/patient/patientApi";
+import { apiErrorMessage } from "@/utils/api-error";
+import { DeleteFilled, EditOutlined, MoreOutlined, EyeOutlined } from "@ant-design/icons";
+import { App, Dropdown, type MenuProps, Tag, Tooltip } from "antd";
 import type { ColumnsType } from "antd/es/table";
 import {
   TREATMENT_STATUS,
@@ -21,7 +26,6 @@ export const formatDate = (value: string | null) => {
   const date = new Date(value);
   return Number.isNaN(date.getTime()) ? "—" : date.toLocaleDateString();
 };
-
 
 export const renderDoctorRelationTooltip = (doctor: Partial<PatientDoctor>) => (
   <div className="space-y-1">
@@ -57,20 +61,56 @@ const statusColors: Record<TREATMENT_STATUS, string> = {
 type PatientColumnsOptions = {
   sortBy: PatientSortBy;
   sortOrder: PatientSortOrder;
-  onView: (patient: TPatient) => void;
+  onEdit: (patient: TPatient) => void;
+  onDeleted?: () => void;
 };
 
-export const getPatientColumns = ({
+export const usePatientColumns = ({
   sortBy,
   sortOrder,
-  onView,
-}: PatientColumnsOptions): ColumnsType<TPatient> => {
+  onEdit,
+  onDeleted,
+}: PatientColumnsOptions) => {
+  const { modal, message } = App.useApp();
+  const [deletePatient, { isLoading: isDeleting }] = useDeletePatientMutation();
+  const deletePending = useRef(false);
+  const handleDeleteConfirm = (record: Pick<TPatient, "_id" | "name">) => {
+    if (isDeleting || deletePending.current) return;
+    modal.confirm({
+      title: "Delete Patient",
+      content: (
+        <span>
+          Are you sure you want to delete <strong>{record.name}</strong>?
+        </span>
+      ),
+      okText: "Delete",
+      cancelText: "Cancel",
+      okButtonProps: { danger: true },
+      centered: true,
+      onOk: async () => {
+        if (deletePending.current) return;
+        deletePending.current = true;
+        try {
+          const response = await deletePatient(record._id).unwrap();
+          if (!response.success) throw new Error(response.message || "Failed to delete patient");
+          message.success("Patient deleted successfully.");
+          onDeleted?.();
+        } catch (error: unknown) {
+          message.error(apiErrorMessage(error, "Failed to delete patient"));
+          throw error;
+        } finally {
+          deletePending.current = false;
+        }
+      },
+    });
+  };
+
   const sortState = (field: PatientSortBy) => ({
     sorter: true,
     sortOrder:
       sortBy === field ? (sortOrder === "asc" ? ("ascend" as const) : ("descend" as const)) : null,
   });
-  return [
+  const columns: ColumnsType<TPatient> = [
     {
       title: "Patient Name",
       dataIndex: "name",
@@ -148,19 +188,43 @@ export const getPatientColumns = ({
     {
       title: "Actions",
       key: "actions",
-      width: 80,
+      width: 70,
       fixed: "right",
       align: "center",
-      render: (_: unknown, patient) => (
-        <Tooltip title="View">
-          <Button
-            type="text"
-            aria-label={`View ${patient.name}`}
-            icon={<EyeOutlined />}
-            onClick={() => onView(patient)}
-          />
-        </Tooltip>
-      ),
+      render: (_, record) => {
+        const items: MenuProps["items"] = [
+          {
+            key: "view",
+            icon: <EyeOutlined />,
+            label: (
+              <Link href={`/dashboard/patients/${encodeURIComponent(record._id)}`}>
+                View Patient
+              </Link>
+            ),
+          },
+          {
+            key: "edit",
+            icon: <EditOutlined />,
+            label: "Edit Patient",
+            onClick: () => onEdit(record),
+          },
+          { type: "divider" },
+          {
+            key: "delete",
+            icon: <DeleteFilled />,
+            label: "Delete Patient",
+            danger: true,
+            disabled: isDeleting,
+            onClick: () => handleDeleteConfirm(record),
+          },
+        ];
+        return (
+          <Dropdown menu={{ items }} trigger={["hover"]} placement="bottomRight">
+            <MoreOutlined />
+          </Dropdown>
+        );
+      },
     },
   ];
+  return { columns, isDeleting, handleDeleteConfirm };
 };

@@ -1,14 +1,10 @@
 import Table from "@/components/ui/data-table";
 import type { TMeta } from "@/types";
 import type { PatientSortBy, PatientSortOrder, TPatient } from "@/types/patient";
-import { Descriptions, Modal, Tooltip } from "antd";
 import { useState } from "react";
-import {
-  formatDate,
-  formatEnumLabel,
-  getPatientColumns,
-  renderDoctorRelationTooltip,
-} from "./patient-table-columns";
+import { usePatientColumns } from "./patient-table-columns";
+import PatientEditContent from "./patient-edit-content";
+import ModalComponent from "@/components/ui/modal";
 
 type PatientTableProps = {
   patients: TPatient[];
@@ -27,10 +23,11 @@ type PatientTableProps = {
 
 export default function PatientTable(props: PatientTableProps) {
   const [selectedPatient, setSelectedPatient] = useState<TPatient>();
-  const columns = getPatientColumns({
+  const [formLoading, setFormLoading] = useState(false);
+  const { columns } = usePatientColumns({
     sortBy: props.sortBy,
     sortOrder: props.sortOrder,
-    onView: setSelectedPatient,
+    onEdit: setSelectedPatient,
   });
   return (
     <div className="rounded-2xl border border-slate-200 bg-white p-2 shadow-lg shadow-blue-200 sm:p-5">
@@ -48,65 +45,26 @@ export default function PatientTable(props: PatientTableProps) {
         setSortOrder={props.changeSortOrder}
         rowKey="_id"
       />
-      <Modal
-        title="Patient Details"
+      <ModalComponent
+        destroyOnClose
         open={Boolean(selectedPatient)}
-        onCancel={() => setSelectedPatient(undefined)}
-        footer={null}
+        onOpenChange={(open) => {
+          if (!open) {
+            setSelectedPatient(undefined);
+            setFormLoading(false);
+          }
+        }}
+        width={640}
+        loading={formLoading}
       >
         {selectedPatient && (
-          <Descriptions
-            column={1}
-            items={[
-              { key: "name", label: "Patient Name", children: selectedPatient.name },
-              { key: "phone", label: "Phone", children: selectedPatient.phone },
-              { key: "age", label: "Age", children: selectedPatient.age },
-              { key: "gender", label: "Gender", children: formatEnumLabel(selectedPatient.gender) },
-              {
-                key: "doctorName",
-                label: "Doctor",
-                children: selectedPatient.doctor?.[0] ? (
-                  <Tooltip title={renderDoctorRelationTooltip(selectedPatient.doctor[0])}>
-                    <span>{selectedPatient.doctor[0].name || "—"}</span>
-                  </Tooltip>
-                ) : (
-                  "—"
-                ),
-              },
-              {
-                key: "doctorRegistration",
-                label: "Medical Registration No.",
-                children: selectedPatient.doctor?.[0]?.medicalRegistrationNo || "—",
-              },
-              {
-                key: "doctorEmail",
-                label: "Doctor Email",
-                children: selectedPatient.doctor?.[0]?.email || "—",
-              },
-              {
-                key: "status",
-                label: "Treatment Status",
-                children: formatEnumLabel(selectedPatient.treatmentStatus),
-              },
-              {
-                key: "lastVisit",
-                label: "Last Visit",
-                children: formatDate(selectedPatient.lastVisitAt),
-              },
-              {
-                key: "followUp",
-                label: "Follow Up",
-                children: formatDate(selectedPatient.followUpDate),
-              },
-              {
-                key: "createdAt",
-                label: "Created At",
-                children: formatDate(selectedPatient.createdAt),
-              },
-            ]}
+          <PatientEditContent
+            key={selectedPatient._id}
+            id={selectedPatient._id}
+            onLoadingChange={setFormLoading}
           />
         )}
-      </Modal>
+      </ModalComponent>
     </div>
   );
 }

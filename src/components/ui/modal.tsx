@@ -27,6 +27,7 @@ type ModalComponentProps = {
   buttonText?: string;
   button?: ReactNode;
   loading?: boolean;
+  destroyOnClose?: boolean;
   width?: number;
   className?: string;
   open?: boolean;
@@ -40,6 +41,7 @@ const ModalComponent = ({
   width,
   className,
   loading = false,
+  destroyOnClose = false,
   open: controlledOpen,
   onOpenChange,
 }: ModalComponentProps) => {
@@ -81,7 +83,11 @@ const ModalComponent = ({
           className={className}
           open={open}
           confirmLoading={loading}
-          onCancel={closeModal}
+          destroyOnClose={destroyOnClose}
+          onCancel={loading ? undefined : closeModal}
+          closable={!loading}
+          maskClosable={!loading}
+          keyboard={!loading}
           footer={null}
           width={width || 1000}
         >
