@@ -27,7 +27,16 @@ export interface ProfileUser {
   email: string;
   role: string;
   isActive: boolean;
-  profile: { name?: string; [key: string]: unknown } | null;
+  profile: {
+    _id: string;
+    userId: string;
+    name: string;
+    phone?: string;
+    isDeleted: boolean;
+    deletedAt: string | null;
+    createdAt: string;
+    updatedAt: string;
+  } | null;
 }
 export type ProfileResponse = ApiResponse<{ user: ProfileUser }>;
 export interface ChangePasswordPayload {

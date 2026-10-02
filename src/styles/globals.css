@@ -522,41 +522,6 @@ body {
   color: #1a1a1a !important;
 }
 
-.image-preview-item {
-  position: relative;
-  border-radius: 6px;
-  overflow: hidden;
-  transition: transform 0.3s ease;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-}
-
-.image-preview-item:hover {
-  transform: scale(1.02);
-}
-
-.delete-btn-overlay {
-  position: absolute;
-  top: 8px;
-  right: 8px;
-  background: rgba(255, 255, 255, 0.8);
-  backdrop-filter: blur(4px);
-  border: none;
-  border-radius: 50%;
-  width: 28px;
-  height: 28px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  color: #ff4d4f;
-  transition: all 0.2s ease;
-}
-
-.delete-btn-overlay:hover {
-  background: #ff4d4f;
-  color: white;
-}
-
 .header-gradient {
   padding: 24px;
   background: linear-gradient(135deg, #ffffff 0%, #f0f2f5 100%);

@@ -2,6 +2,7 @@
 
 import { useMobile } from "@/hooks/use-mobile";
 import useAuth from "@/hooks/useAuth";
+import { authApi } from "@/redux/features/auth/authApi";
 
 import {
   DownOutlined,
@@ -36,6 +37,9 @@ export default function AppHeader({
   const isMobile = useMobile();
   const { user, logout } = useAuth();
 
+  const displayName = user?.name || user?.email || "User";
+  const displayRole = user?.role || "User";
+
   async function handleLogout() {
     await logout();
     message.success("Logged out successfully");
@@ -47,16 +51,14 @@ export default function AppHeader({
     {
       key: "1",
       icon: <UserOutlined />,
-      label: (
-        <span onClick={() => router.push("/dashboard/profile")}>
-          {user?.name || user?.email || "Profile"}
-        </span>
-      ),
+      label: displayName,
+      onClick: () => router.push("/dashboard/profile"),
     },
     {
       key: "password",
       icon: <EditOutlined />,
-      label: <span onClick={() => router.push("/dashboard/change-password")}>Change Password</span>,
+      label: "Change Password",
+      onClick: () => router.push("/dashboard/settings"),
     },
     {
       type: "divider" as const,
@@ -64,7 +66,8 @@ export default function AppHeader({
     {
       key: "5",
       icon: <LogoutOutlined />,
-      label: <span onClick={handleLogout}>Sign Out</span>,
+      label: "Sign Out",
+      onClick: handleLogout,
     },
   ];
 
@@ -117,9 +120,11 @@ export default function AppHeader({
         }}
       >
         <Dropdown menu={{ items: userMenuItems }} placement="bottomRight" trigger={["click"]}>
-          <div
+          <button
+            type="button"
+            aria-label="Open user menu"
             style={{ padding: "0 5px" }}
-            className="flex h-9 cursor-pointer justify-between rounded-xl border border-slate-200 bg-slate-50"
+            className="flex h-9 min-w-0 cursor-pointer items-center justify-between rounded-xl border border-slate-200 bg-slate-50"
           >
             <Avatar
               icon={<UserOutlined />}
@@ -140,13 +145,14 @@ export default function AppHeader({
                   }}
                 >
                   <span
+                    className="max-w-48 truncate"
                     style={{
                       color: "rgba(0, 0, 0, 0.85)",
                       fontWeight: "500",
                       fontSize: "14px",
                     }}
                   >
-                    {user?.name || user?.email || "User"}
+                    {displayName}
                   </span>
                   <span
                     style={{
@@ -154,7 +160,7 @@ export default function AppHeader({
                       fontSize: "12px",
                     }}
                   >
-                    {user?.role || "guest"}
+                    {displayRole}
                   </span>
                 </div>
                 <DownOutlined
@@ -165,7 +171,7 @@ export default function AppHeader({
                 />
               </>
             )}
-          </div>
+          </button>
         </Dropdown>
       </div>
     </Header>

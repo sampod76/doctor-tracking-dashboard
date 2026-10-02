@@ -16,12 +16,8 @@ interface TableProps<TData> {
   setLimit: (limit: number) => void;
   setSortBy: (field: string) => void;
   setSortOrder: (order: string) => void;
-  setStatus?: (value: string | undefined) => void;
-  setMediaType?: (value: string | undefined) => void;
-  setFieldsType?: (value: string) => void;
   showSizeChanger?: boolean;
   urlParamsUpdate?: boolean;
-  dataSource?: TData[];
   pagination?: boolean;
   rowKey?: string;
 }
@@ -37,8 +33,6 @@ export default function Table<TData>({
   limit,
   setLimit,
   setSortBy,
-  setStatus,
-  setMediaType,
   setSortOrder,
   showSizeChanger = true,
   urlParamsUpdate = true,
@@ -101,10 +95,11 @@ export default function Table<TData>({
 
   const handleTableChange = (
     paginationInfo: any,
-    filters: any,
+    _filters: any,
     sorter: any,
     extra: { action: string },
   ) => {
+    void _filters;
     const newPage = paginationInfo.pageSize !== limit ? 1 : paginationInfo.current;
 
     const newLimit = paginationInfo.pageSize;
@@ -126,21 +121,6 @@ export default function Table<TData>({
       }
     }
 
-    if (setStatus) {
-      if (filters.status) {
-        setStatus(filters.status[0]);
-      } else {
-        setStatus(undefined);
-      }
-    }
-
-    if (setMediaType) {
-      if (filters.media_type) {
-        setMediaType(filters.media_type[0]);
-      } else {
-        setMediaType(undefined);
-      }
-    }
   };
 
   const paginationConfig = {
