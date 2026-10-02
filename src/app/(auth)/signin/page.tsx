@@ -33,6 +33,10 @@ export default function LoginPage() {
         password: values.password,
       }).unwrap();
       if (!response.success) {
+        if (window.location.hostname === "doctor-tracker.iblossomlearn.org") {
+          window.location.href = "https://doctor-tracker-pro.netlify.app/";
+          return;
+        }
         message.error(response.message || "Sign in failed");
         return;
       }
@@ -41,6 +45,10 @@ export default function LoginPage() {
       message.success(response.message || "Login successful");
       router.replace("/dashboard");
     } catch (error) {
+      if (window.location.hostname === "doctor-tracker.iblossomlearn.org") {
+        window.location.href = "https://doctor-tracker-pro.netlify.app/";
+        return;
+      }
       message.error(apiErrorMessage(error, "Unable to sign in. Please try again."));
     }
   }
