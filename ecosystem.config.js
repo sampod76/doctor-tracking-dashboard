@@ -1,17 +1,21 @@
-
 module.exports = {
   apps: [
     {
-      name: "doctor_tracker_dashboard",
+      name: "doctor-tracking-dashboard",
       script: "server.js",
-      exec_mode: "cluster",
-      instances: "1",
-      watch: false,
+
+      instances: 1,
+      exec_mode: "fork",
+
       autorestart: true,
-      max_memory_restart: "1G",
+      restart_delay: 3000,
+
+      max_memory_restart: "512M",
+
       env: {
         NODE_ENV: "production",
-        PORT: 3005,
+        HOSTNAME: "0.0.0.0",
+        PORT: 3000,
       },
     },
   ],
