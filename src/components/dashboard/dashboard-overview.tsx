@@ -1,9 +1,8 @@
 "use client";
 
-import { useState, type ReactNode } from "react";
+import { type ReactNode } from "react";
 import Link from "next/link";
-import dayjs from "dayjs";
-import { Alert, Avatar, Button, DatePicker, Skeleton, Table, Tag, Tooltip } from "antd";
+import { Alert, Avatar, Button, Skeleton, Table, Tag, Tooltip } from "antd";
 import {
   MedicineBoxOutlined,
   TeamOutlined,
@@ -12,6 +11,7 @@ import {
 } from "@ant-design/icons";
 import { useAppSelector } from "@/redux/hooks";
 import { useGetDoctorsQuery } from "@/redux/features/doctor/doctorApi";
+import { useGetDashboardOverviewQuery } from "@/redux/features/dashboard/dashboardApi";
 import { useGetPatientsQuery } from "@/redux/features/patient/patientApi";
 import { TREATMENT_STATUS, type TPatient } from "@/types/patient";
 import type { TDoctor } from "@/types/doctor";
@@ -81,38 +81,26 @@ function Person({ name }: { name: string }) {
 
 export default function DashboardOverview() {
   const user = useAppSelector((state) => state.auth.user);
-  const [followUpDay, setFollowUpDay] = useState(() => dayjs());
-  const [months, setMonths] = useState(6);
   const doctors = useGetDoctorsQuery(recentParams);
   const patients = useGetPatientsQuery(recentParams);
-  const activeDoctors = useGetDoctorsQuery({ page: 1, limit: 1, isActive: true });
-
-  const followUps = useGetPatientsQuery({
-    page: 1,
-    limit: 1,
-    followUpDate: followUpDay.format("YYYY-MM-DD"),
-  });
-
-  const active = useGetPatientsQuery({
-    page: 1,
-    limit: 1,
-    treatmentStatus: TREATMENT_STATUS.ACTIVE,
-  });
-  const observation = useGetPatientsQuery({
-    page: 1,
-    limit: 1,
-    treatmentStatus: TREATMENT_STATUS.UNDER_OBSERVATION,
-  });
-  const recovered = useGetPatientsQuery({
-    page: 1,
-    limit: 1,
-    treatmentStatus: TREATMENT_STATUS.RECOVERED,
-  });
-  const statusQueries = [active, observation, recovered];
+  const dashboard = useGetDashboardOverviewQuery();
+  const dashboardData = dashboard.data?.data;
+  const analyticsInitialLoading = dashboard.isFetching && !dashboard.data;
+  const treatmentStatusColors: Record<string, string> = {
+    Active: "#3b82f6",
+    "Under observation": "#fbbf24",
+    Recovered: "#10b981",
+  };
+  const treatmentStatusData =
+    dashboardData?.treatmentStatus.map((item) => ({
+      ...item,
+      color: treatmentStatusColors[item.name] ?? "#94a3b8",
+    })) ?? [];
   const stats = [
     {
       title: "Total Doctors",
       query: doctors,
+      value: doctors.data?.meta.total,
       icon: <MedicineBoxOutlined />,
       accent: "bg-sky-100 text-sky-500",
       detail: "All registered doctors",
@@ -120,27 +108,30 @@ export default function DashboardOverview() {
     {
       title: "Total Patients",
       query: patients,
+      value: patients.data?.meta.total,
       icon: <TeamOutlined />,
       accent: "bg-emerald-100 text-emerald-500",
       detail: "All registered patients",
     },
     {
       title: "Follow-ups",
-      query: followUps,
+      query: dashboard,
+      value: dashboardData?.totalFollowUps,
       icon: <CalendarOutlined />,
       accent: "bg-violet-100 text-violet-500",
-      detail: `Scheduled ${followUpDay.format("DD MMM YYYY")}`,
+      detail: "Total follow-ups",
     },
     {
       title: "Active Doctors",
-      query: activeDoctors,
+      query: dashboard,
+      value: dashboardData?.activeDoctors,
       icon: <CheckCircleOutlined />,
       accent: "bg-amber-100 text-amber-500",
       detail: "Currently active accounts",
     },
   ];
-  const doctorRows = doctors.error ? [] : (doctors.data?.data ?? []);
-  const patientRows = patients.error ? [] : (patients.data?.data ?? []);
+  const doctorRows = doctors.data?.data ?? [];
+  const patientRows = patients.data?.data ?? [];
   return (
     <div className="relative min-h-full">
       <div className="min-h-full space-y-5 p-4 sm:p-5 lg:p-6">
@@ -152,26 +143,9 @@ export default function DashboardOverview() {
               of your doctor and patient management system.
             </p>
           </div>
-          <div className="shrink-0">
-            <label
-              htmlFor="dashboard-follow-up-date"
-              className="mb-1 block text-xs font-medium text-slate-500"
-            >
-              Follow-up date
-            </label>
-            <DatePicker
-              id="dashboard-follow-up-date"
-              value={followUpDay}
-              allowClear={false}
-              onChange={(date) => {
-                if (date) setFollowUpDay(date);
-              }}
-              className="w-full md:w-44"
-            />
-          </div>
         </div>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-          {stats.map(({ title, query, icon, accent, detail }) => (
+          {stats.map(({ title, query, value, icon, accent, detail }) => (
             <section key={title} className={`${panelClass} flex items-center gap-4`}>
               <span
                 className={`${accent} flex h-14 w-14 shrink-0 items-center justify-center rounded-full text-2xl`}
@@ -180,11 +154,11 @@ export default function DashboardOverview() {
               </span>
               <div className="min-w-0 flex-1">
                 <h2 className="text-sm text-slate-600">{title}</h2>
-                {query.isFetching ? (
+                {query.isFetching && !query.data ? (
                   <Skeleton.Input active size="small" className="my-2" />
                 ) : (
                   <p className="my-1 text-3xl font-bold text-slate-900">
-                    {query.error ? "—" : (query.currentData?.meta?.total?.toLocaleString() ?? "—")}
+                    {query.error && !query.data ? "—" : (value?.toLocaleString() ?? "—")}
                   </p>
                 )}
                 <p className="text-xs text-slate-500">{detail}</p>
@@ -198,62 +172,36 @@ export default function DashboardOverview() {
           ))}
         </div>
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
-          <Panel
-            title="Patients Overview"
-            detail="Demo analytics · illustrative monthly counts"
-            action={
-              <select
-                aria-label="Demo trend period"
-                value={months}
-                onChange={(event) => setMonths(Number(event.target.value))}
-                className="rounded-md border border-slate-200 bg-white p-1.5 text-xs text-slate-600"
-              >
-                <option value={6}>6 demo months</option>
-                <option value={3}>3 demo months</option>
-              </select>
-            }
-          >
+          <Panel title="Patients Overview" detail="Last 6 months">
             <div className="h-64 min-w-0">
-              <PatientOverviewChart months={months} />
-            </div>
-          </Panel>
-          <Panel
-            title="Patients per Doctor"
-            detail="Live counts · five most recently added doctors"
-          >
-            <div className="h-64 min-w-0">
-              {doctors.error ? (
-                <QueryError error={doctors.error} retry={doctors.refetch} />
-              ) : doctors.isFetching ? (
+              {dashboard.error && !dashboard.data ? (
+                <QueryError error={dashboard.error} retry={dashboard.refetch} />
+              ) : analyticsInitialLoading ? (
                 <Skeleton active />
               ) : (
-                <PatientsPerDoctorChart doctors={doctorRows} />
+                <PatientOverviewChart data={dashboardData?.patientsOverview ?? []} />
+              )}
+            </div>
+          </Panel>
+          <Panel title="Patients per Doctor" detail="Live patient counts per doctor">
+            <div className="h-64 min-w-0">
+              {dashboard.error && !dashboard.data ? (
+                <QueryError error={dashboard.error} retry={dashboard.refetch} />
+              ) : analyticsInitialLoading ? (
+                <Skeleton active />
+              ) : (
+                <PatientsPerDoctorChart data={dashboardData?.patientsPerDoctor ?? []} />
               )}
             </div>
           </Panel>
           <Panel title="Treatment Status" detail="Live patient totals · all time">
             <div className="h-80 min-w-0 sm:h-64 xl:h-80 2xl:h-64">
-              {statusQueries.some((query) => query.error) ? (
-                <QueryError
-                  error={statusQueries.find((query) => query.error)?.error}
-                  retry={() =>
-                    statusQueries.filter((query) => query.error).forEach((query) => query.refetch())
-                  }
-                />
-              ) : statusQueries.some((query) => query.isFetching) ? (
+              {dashboard.error && !dashboard.data ? (
+                <QueryError error={dashboard.error} retry={dashboard.refetch} />
+              ) : analyticsInitialLoading ? (
                 <Skeleton active />
               ) : (
-                <TreatmentStatusChart
-                  data={[
-                    { name: "Active", value: active.data?.meta.total ?? 0, color: "#3b82f6" },
-                    {
-                      name: "Under observation",
-                      value: observation.data?.meta.total ?? 0,
-                      color: "#fbbf24",
-                    },
-                    { name: "Recovered", value: recovered.data?.meta.total ?? 0, color: "#10b981" },
-                  ]}
-                />
+                <TreatmentStatusChart data={treatmentStatusData} />
               )}
             </div>
           </Panel>
@@ -270,7 +218,7 @@ export default function DashboardOverview() {
               </Link>
             }
           >
-            {doctors.error ? (
+            {doctors.error && !doctors.data ? (
               <QueryError error={doctors.error} retry={doctors.refetch} />
             ) : (
               <Table<TDoctor>
@@ -327,7 +275,7 @@ export default function DashboardOverview() {
               </Link>
             }
           >
-            {patients.error ? (
+            {patients.error && !patients.data ? (
               <QueryError error={patients.error} retry={patients.refetch} />
             ) : (
               <Table<TPatient>
