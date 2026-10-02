@@ -1,4 +1,6 @@
-/* eslint-disable import/no-anonymous-default-export */
-export default {
+
+const config = {
   host: process.env.BASE_URL,
 };
+
+export default config;

@@ -1,14 +1,16 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
 "use client";
 
 import { sidebarData } from "@/constants";
-import { SidebarItem as ISidebarItem } from "@/types";
 import { useAppSelector } from "@/redux/hooks";
-import { Layout, Menu, MenuProps } from "antd";
+import type { SidebarItem as ISidebarItem } from "@/types";
+
+import { Layout, Menu } from "antd";
+import type { MenuProps } from "antd";
+
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState } from "react";
+import type { ReactNode } from "react";
 
 const { Sider } = Layout;
 
@@ -21,114 +23,123 @@ interface SidebarProps {
   onMenuSelect?: () => void;
 }
 
-interface MenuItem {
+interface SidebarMenuItem {
   key: string;
   url?: string;
-  icon?: React.ReactNode;
-  label: React.ReactNode;
-  children?: MenuItem[];
-  permission?: string;
-  allowedRoles?: string[];
+  icon?: ReactNode;
+  label: ReactNode;
+  children?: SidebarMenuItem[];
 }
+
+const buildMenuItems = (items: ISidebarItem[] = [], userRole?: string): SidebarMenuItem[] => {
+  return items.flatMap((item) => {
+    if (item.allowedRoles?.length && (!userRole || !item.allowedRoles.includes(userRole))) {
+      return [];
+    }
+    const children = item.items?.length ? buildMenuItems(item.items, userRole) : undefined;
+    if (item.items?.length && !children?.length) {
+      return [];
+    }
+
+    return [
+      {
+        key: item.key,
+        url: item.url,
+        icon: item.icon ? <item.icon /> : undefined,
+        label: item.url ? <Link href={normalizeUrl(item.url)}>{item.title}</Link> : item.title,
+        ...(children?.length ? { children } : {}),
+      },
+    ];
+  });
+};
+
+const normalizeUrl = (url: string) => {
+  return url.startsWith("/") ? url : `/${url}`;
+};
+
+const flattenMenuItems = (items: SidebarMenuItem[]): SidebarMenuItem[] => {
+  return items.flatMap((item) => [item, ...(item.children ? flattenMenuItems(item.children) : [])]);
+};
+
+const getSelectedMenuItem = (items: SidebarMenuItem[], pathname: string) => {
+  return flattenMenuItems(items)
+    .filter((item) => {
+      if (!item.url) return false;
+
+      const url = normalizeUrl(item.url);
+
+      if (pathname === url) {
+        return true;
+      }
+
+      if (url === "/dashboard") {
+        return false;
+      }
+
+      return pathname.startsWith(`${url}/`);
+    })
+    .sort((a, b) => {
+      const aLength = a.url?.length ?? 0;
+      const bLength = b.url?.length ?? 0;
+
+      return bLength - aLength;
+    })[0];
+};
+
+const getParentKeys = (
+  items: SidebarMenuItem[],
+  selectedKey?: string,
+  parents: string[] = [],
+): string[] => {
+  if (!selectedKey) return [];
+
+  for (const item of items) {
+    if (item.key === selectedKey) {
+      return parents;
+    }
+
+    if (item.children?.length) {
+      const result = getParentKeys(item.children, selectedKey, [...parents, item.key]);
+
+      if (result.length) {
+        return result;
+      }
+    }
+  }
+
+  return [];
+};
+
+const toAntdMenuItems = (items: SidebarMenuItem[]): MenuProps["items"] => {
+  return items.map(({ key, label, icon, children }) => ({
+    key,
+    label,
+    icon,
+    ...(children?.length
+      ? {
+          children: toAntdMenuItems(children),
+        }
+      : {}),
+  }));
+};
 
 export default function Sidebar({ collapsed, isMobile = false, onMenuSelect }: SidebarProps) {
   const pathname = usePathname();
 
   const user = useAppSelector((state) => state.auth.user);
 
-  const convertToMenuItems = (items: ISidebarItem[] = []): MenuItem[] => {
-    return items.map((item) => {
-      const menuItem: MenuItem = {
-        key: item.key,
-        url: item.url,
-        icon: item.icon ? <item.icon /> : undefined,
-        label: item.url ? (
-          <Link href={item.url.startsWith("/") ? item.url : `/${item.url}`}>{item.title}</Link>
-        ) : (
-          item.title
-        ),
-        permission: item.permission,
-        allowedRoles: item.allowedRoles,
-      };
-
-      if (item.items && item.items.length > 0) {
-        menuItem.children = convertToMenuItems(item.items);
-      }
-
-      return menuItem;
-    });
-  };
-
-  const filterMenuByRole = (items: MenuItem[]): MenuItem[] =>
-    items.flatMap((item) => {
-      // Role values come directly from the backend; no client permission cookie exists.
-      if (item.allowedRoles?.length && (!user || !item.allowedRoles.includes(user.role))) return [];
-      if (item.children) {
-        const children = filterMenuByRole(item.children);
-        return children.length ? [{ ...item, children }] : [];
-      }
-      return [item];
-    });
-  // Keep role/permission metadata internal; only supported properties reach Ant Design.
-  const toAntdMenuItems = (items: MenuItem[]): MenuProps["items"] =>
-    items.map(({ key, label, icon, children }) => ({
-      key,
-      label,
-      icon,
-      ...(children ? { children: toAntdMenuItems(children) } : {}),
-    }));
-
-  const filteredSidebarGroups = sidebarData
+  const sidebarGroups = sidebarData
     .map((group) => ({
       ...group,
-      filteredItems: filterMenuByRole(convertToMenuItems(group.items)),
+      menuItems: buildMenuItems(group.items, user?.role),
     }))
-    .filter((group) => group.filteredItems.length);
-  const allFilteredItems = filteredSidebarGroups.flatMap((group) => group.filteredItems);
+    .filter((group) => group.menuItems.length > 0);
 
-  const getRouteItems = (items: MenuItem[]): MenuItem[] =>
-    items.flatMap((item) => [...(item.url ? [item] : []), ...getRouteItems(item.children ?? [])]);
+  const allMenuItems = sidebarGroups.flatMap((group) => group.menuItems);
 
-  const selectedItem = getRouteItems(allFilteredItems)
-    .filter(
-      (item) =>
-        pathname === item.url || (item.url !== "/dashboard" && pathname.startsWith(`${item.url}/`)),
-    )
-    .sort((a, b) => b.url!.length - a.url!.length)[0];
+  const selectedItem = getSelectedMenuItem(allMenuItems, pathname);
 
-  const getLevelKeys = (items: MenuItem[]) => {
-    const key: Record<string, number> = {};
-    const func = (items2: MenuItem[], level = 1) => {
-      items2.forEach((item) => {
-        if (item.key) key[item.key] = level;
-        if (item.children) func(item.children, level + 1);
-      });
-    };
-    func(items);
-    return key;
-  };
-
-  const levelKeys = getLevelKeys(allFilteredItems);
-  const [stateOpenKeys, setStateOpenKeys] = useState<string[]>([
-    pathname.split("/")[1] ? `/${pathname.split("/")[1]}` : "/dashboard",
-  ]);
-
-  const onOpenChange: MenuProps["onOpenChange"] = (openKeys) => {
-    const currentOpenKey = openKeys.find((key) => !stateOpenKeys.includes(key));
-    if (currentOpenKey !== undefined) {
-      const repeatIndex = openKeys
-        .filter((key) => key !== currentOpenKey)
-        .findIndex((key) => levelKeys[key] === levelKeys[currentOpenKey]);
-
-      setStateOpenKeys(
-        openKeys
-          .filter((_, index) => index !== repeatIndex)
-          .filter((key) => levelKeys[key] <= levelKeys[currentOpenKey]),
-      );
-    } else {
-      setStateOpenKeys(openKeys);
-    }
-  };
+  const defaultOpenKeys = getParentKeys(allMenuItems, selectedItem?.key);
 
   return (
     <Sider
@@ -137,6 +148,8 @@ export default function Sidebar({ collapsed, isMobile = false, onMenuSelect }: S
       collapsible
       collapsed={collapsed}
       collapsedWidth={isMobile ? 0 : COLLAPSED_SIDEBAR_WIDTH}
+      width={isMobile ? "min(200px, calc(100vw - 24px))" : SIDEBAR_WIDTH}
+      theme="light"
       style={{
         overflow: "hidden",
         height: "100vh",
@@ -146,14 +159,14 @@ export default function Sidebar({ collapsed, isMobile = false, onMenuSelect }: S
         bottom: 0,
         zIndex: isMobile && !collapsed ? 1001 : 1000,
         background: "var(--color-bg-container, #ffffff)",
-        boxShadow: isMobile && collapsed ? "none" : "2px 0 10px rgba(0, 0, 0, 0.06)",
-        borderRight: "none",
+        borderRight: isMobile && collapsed ? "none" : "1px solid rgba(226, 232, 240, 0.7)",
         transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
       }}
-      width={isMobile ? "min(200px, calc(100vw - 24px))" : SIDEBAR_WIDTH}
-      theme="light"
     >
       <Link
+        href="/dashboard"
+        aria-label="Dashboard home"
+        onClick={onMenuSelect}
         className="logo flex h-20 shrink-0 items-center justify-center py-4"
         style={{
           background: "var(--color-bg-container, #ffffff)",
@@ -162,9 +175,6 @@ export default function Sidebar({ collapsed, isMobile = false, onMenuSelect }: S
           position: "relative",
           zIndex: 2,
         }}
-        href="/dashboard"
-        aria-label="Dashboard home"
-        onClick={onMenuSelect}
       >
         <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full border border-black/5 bg-white shadow-sm">
           <Image
@@ -172,12 +182,14 @@ export default function Sidebar({ collapsed, isMobile = false, onMenuSelect }: S
             alt="Logo"
             width={34}
             height={34}
+            priority
             className="h-[34px] w-[34px] object-contain"
           />
         </div>
       </Link>
 
       <div
+        className="custom-sidebar-scroll"
         style={{
           padding: "5px 0",
           height: "calc(100vh - 80px)",
@@ -186,26 +198,21 @@ export default function Sidebar({ collapsed, isMobile = false, onMenuSelect }: S
           scrollbarWidth: "thin",
           scrollbarColor: "rgba(0, 0, 0, 0.2) transparent",
         }}
-        className="custom-sidebar-scroll"
       >
-        {filteredSidebarGroups.map((group, index) => (
+        {sidebarGroups.map((group, index) => (
           <div key={group.key || index} style={{ marginBottom: 12 }}>
             <Menu
               mode="inline"
-              defaultOpenKeys={[
-                pathname.split("/")[1] ? `/${pathname.split("/")[1]}` : "/dashboard",
-              ]}
+              theme="light"
               selectedKeys={selectedItem ? [selectedItem.key] : []}
+              defaultOpenKeys={defaultOpenKeys}
+              onClick={onMenuSelect}
+              items={toAntdMenuItems(group.menuItems)}
+              className="custom-sidebar-menu"
               style={{
                 borderInlineEnd: 0,
                 background: "var(--color-bg-container, #ffffff)",
               }}
-              openKeys={stateOpenKeys}
-              onOpenChange={onOpenChange}
-              onClick={onMenuSelect}
-              items={toAntdMenuItems(group.filteredItems)}
-              theme="light"
-              className="custom-sidebar-menu"
             />
           </div>
         ))}

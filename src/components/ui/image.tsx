@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/ban-ts-comment */
+
 import { TFileDocument } from "@/types";
 import fileObjectToLink from "@/utils/fileObjectToLink";
 import NextImage from "next/image";
@@ -25,8 +25,8 @@ export default function CustomImage({
   return (
     <NextImage
       src={fileObjectToLink(src)}
-      // @ts-ignore
-      alt={alt || src?.filename || "Image"}
+
+      alt={alt || (typeof src === "string" ? undefined : src?.filename) || "Image"}
       width={width || 750}
       height={height || 750}
       {...props}

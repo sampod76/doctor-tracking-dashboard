@@ -1,6 +1,7 @@
+import type { TDoctor } from "./doctor";
 import type { TMeta, TResponse } from "./global";
 
-// Mirror the existing server enums; this client has no shared server package.
+
 export enum ENUM_GENDER {
   MALE = "MALE",
   FEMALE = "FEMALE",
@@ -13,17 +14,36 @@ export enum TREATMENT_STATUS {
   RECOVERED = "RECOVERED",
 }
 
+export type PatientDoctor = Pick<
+  TDoctor,
+  "name" | "medicalRegistrationNo" | "specialization" | "email"
+>;
+
 export type TPatient = {
   _id: string;
   name: string;
   phone: string;
   doctorId: string;
+  doctor: PatientDoctor[];
   age: number;
   gender: ENUM_GENDER;
   treatmentStatus: TREATMENT_STATUS;
   lastVisitAt: string | null;
   followUpDate: string | null;
   createdAt: string;
+};
+
+export type CreatePatientPayload = Pick<
+  TPatient,
+  "name" | "phone" | "doctorId" | "age" | "gender"
+> & {
+  patientComplaint: string;
+  address?: string;
+  doctorAdvice?: string;
+  notes?: string;
+  treatmentStatus?: TREATMENT_STATUS;
+  lastVisitAt?: string | null;
+  followUpDate?: string | null;
 };
 
 export const PATIENT_SORT_FIELDS = [

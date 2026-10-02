@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import { BaseQueryApi } from "@reduxjs/toolkit/query";
 
 export type TError = {

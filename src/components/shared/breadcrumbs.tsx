@@ -26,9 +26,9 @@ export default function Breadcrumbs({ items, showHome = true, homePath = "/" }: 
   } else {
     const pathSegments = pathname.split("/").filter(Boolean);
     displayItems = pathSegments
-      .filter((segment) => segment.toLowerCase() !== "dashboard") // Remove 'dashboard' redundancy
+      .filter((segment) => segment.toLowerCase() !== "dashboard")
       .map((segment) => {
-        // Reconstruct path properly: find the original index in pathSegments
+
         const originalIndex = pathSegments.indexOf(segment);
         const path = `/${pathSegments.slice(0, originalIndex + 1).join("/")}`;
         const label = segment.replace(/-/g, " ").replace(/\b\w/g, (c) => c.toUpperCase());

@@ -25,7 +25,7 @@ export const authApi = baseApi.injectEndpoints({
           )
             dispatch(login(data.data));
         } catch {
-          /* Automatic refresh failures are handled by the base query. */
+
         }
       },
     }),
@@ -47,7 +47,7 @@ export const authApi = baseApi.injectEndpoints({
             );
           }
         } catch {
-          /* Errors are displayed by the authenticated layout. */
+
         }
       },
     }),

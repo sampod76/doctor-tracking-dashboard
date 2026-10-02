@@ -1,12 +1,12 @@
 import config from "@/config";
 import { TFileDocument } from "@/types";
 
-/**
- * Convert a TFileDocument-like object (or string) into a usable URL.
- *
- * Falls back to the configured AWS CDN url, then to the file's own
- * `originalUrl`/`url`, and finally to a placeholder image.
- */
+
+
+
+
+
+
 export default function fileObjectToLink(src: TFileDocument | string | null | undefined) {
   let imageSrc;
 

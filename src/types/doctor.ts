@@ -21,6 +21,7 @@ export interface TDoctor {
   userId: string;
   createdBy: string;
   name: string;
+  medicalRegistrationNo: string;
   email: string;
   specialization: SPECIALIZATION;
   hospital: string;
@@ -34,12 +35,17 @@ export interface TDoctor {
 }
 export interface DoctorFormValues {
   name: string;
+  medicalRegistrationNo: string;
   email: string;
   password: string;
   phone: string;
   hospital: string;
   specialization: SPECIALIZATION;
 }
+export type UpdateDoctorValues = Pick<
+  TDoctor,
+  "name" | "medicalRegistrationNo" | "phone" | "hospital" | "specialization" | "isActive"
+>;
 export const DOCTOR_SORT_FIELDS = [
   "createdAt",
   "updatedAt",
@@ -66,9 +72,17 @@ export type DoctorsResponse = TResponse<TDoctor[]> & {
   meta: TMeta;
 };
 
-// Fields consumed from the detail endpoint; its aggregation omits list patient counts.
+
 export type DoctorDetails = Pick<
   TDoctor,
-  "_id" | "name" | "email" | "phone" | "hospital" | "specialization" | "isActive" | "createdAt"
+  | "_id"
+  | "name"
+  | "medicalRegistrationNo"
+  | "email"
+  | "phone"
+  | "hospital"
+  | "specialization"
+  | "isActive"
+  | "createdAt"
 > &
   Partial<Pick<TDoctor, "patientsCount">>;

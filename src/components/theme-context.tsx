@@ -28,7 +28,7 @@ interface ThemeContextType {
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
-// Minimal tokens (Arco-like)
+
 const tokens: ThemeTokens = {
   colorPrimary: "#007bff",
   colorSuccess: "#28a745",
@@ -56,7 +56,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     });
   }, []);
 
-  // Ant Design theme config (শুধু যেগুলো css দিয়ে cleanly override করা যায় না)
+
   const antDesignTheme = {
     algorithm: antTheme.defaultAlgorithm,
     token: {
@@ -101,7 +101,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   );
 }
 
-// Hook
+
 export function useTheme() {
   const context = useContext(ThemeContext);
   if (context === undefined) {

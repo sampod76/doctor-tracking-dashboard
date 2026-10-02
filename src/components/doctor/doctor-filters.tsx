@@ -114,7 +114,7 @@ export default function DoctorFilters(props: DoctorFiltersProps) {
       <div className="flex flex-col gap-3 xl:flex-row xl:items-center">
         <Input
           aria-label="Search doctors"
-          placeholder="Search doctors..."
+          placeholder="Search by name, phone or registration no."
           allowClear
           prefix={<SearchOutlined className="text-slate-400" />}
           value={searchTerm}

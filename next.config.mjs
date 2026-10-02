@@ -1,10 +1,10 @@
-/** @type {import('next').NextConfig} */
+
 const nextConfig = {
   eslint: { ignoreDuringBuilds: false },
   typescript: { ignoreBuildErrors: false },
   productionBrowserSourceMaps: false,
-  // Standalone tracing uses symlinks unavailable on ordinary Windows accounts.
-  // Keep standalone output for the Linux Docker deployment.
+
+
   output: process.platform === "win32" ? undefined : "standalone",
 
   images: {

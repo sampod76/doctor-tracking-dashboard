@@ -1,9 +1,14 @@
 import Table from "@/components/ui/data-table";
 import type { TMeta } from "@/types";
 import type { PatientSortBy, PatientSortOrder, TPatient } from "@/types/patient";
-import { Descriptions, Modal } from "antd";
+import { Descriptions, Modal, Tooltip } from "antd";
 import { useState } from "react";
-import { formatDate, formatEnumLabel, getPatientColumns } from "./patient-table-columns";
+import {
+  formatDate,
+  formatEnumLabel,
+  getPatientColumns,
+  renderDoctorRelationTooltip,
+} from "./patient-table-columns";
 
 type PatientTableProps = {
   patients: TPatient[];
@@ -57,7 +62,27 @@ export default function PatientTable(props: PatientTableProps) {
               { key: "phone", label: "Phone", children: selectedPatient.phone },
               { key: "age", label: "Age", children: selectedPatient.age },
               { key: "gender", label: "Gender", children: formatEnumLabel(selectedPatient.gender) },
-              { key: "doctor", label: "Doctor ID", children: selectedPatient.doctorId },
+              {
+                key: "doctorName",
+                label: "Doctor",
+                children: selectedPatient.doctor?.[0] ? (
+                  <Tooltip title={renderDoctorRelationTooltip(selectedPatient.doctor[0])}>
+                    <span>{selectedPatient.doctor[0].name || "—"}</span>
+                  </Tooltip>
+                ) : (
+                  "—"
+                ),
+              },
+              {
+                key: "doctorRegistration",
+                label: "Medical Registration No.",
+                children: selectedPatient.doctor?.[0]?.medicalRegistrationNo || "—",
+              },
+              {
+                key: "doctorEmail",
+                label: "Doctor Email",
+                children: selectedPatient.doctor?.[0]?.email || "—",
+              },
               {
                 key: "status",
                 label: "Treatment Status",

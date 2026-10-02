@@ -1,12 +1,12 @@
 import { ReactNode } from "react";
 
-/**
- * Example reusable dashboard / stat card component.
- *
- * This is a small, generic example kept in the boilerplate so the
- * new project has a starting pattern to follow when building its
- * own dashboard widgets. Replace or extend as the new domain grows.
- */
+
+
+
+
+
+
+
 
 interface StatCardProps {
   title: string;

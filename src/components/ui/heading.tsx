@@ -1,7 +1,7 @@
 import React from "react";
 import styled from "styled-components";
 
-// Extend DefaultTheme to include "heading-color"
+
 import "styled-components";
 
 declare module "styled-components" {

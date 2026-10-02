@@ -15,7 +15,7 @@ import {
 
 import createWebStorage from "redux-persist/lib/storage/createWebStorage";
 
-// Create a noop storage for SSR
+
 const createNoopStorage = () => {
   return {
     getItem(_key: string) {
@@ -32,7 +32,7 @@ const createNoopStorage = () => {
   };
 };
 
-// Use noop storage on server, real storage on client
+
 const storage = typeof window !== "undefined" ? createWebStorage("local") : createNoopStorage();
 
 const authPersistConfig = {
@@ -56,7 +56,7 @@ export const store = configureStore({
     }).concat(baseApi.middleware),
 });
 
-// Only create persistor on client side
+
 export const persistor = typeof window !== "undefined" ? persistStore(store) : null;
 
 export type RootState = ReturnType<typeof store.getState>;

@@ -20,6 +20,7 @@ export default function DoctorHeader({ filterOpen, onOpenFilters }: DoctorHeader
       <div className="flex shrink-0 items-center gap-2">
         <ModalComponent
           width={500}
+          className="doctor-compact-modal"
           button={
             <button
               type="button"

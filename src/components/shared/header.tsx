@@ -80,7 +80,7 @@ export default function AppHeader({
         top: 0,
         zIndex: 999,
         height: "80px",
-        borderBottom: `1px solid rgba(0, 0, 0, 0.05)`,
+        borderBottom: "1px solid rgba(226, 232, 240, 0.7)",
       }}
     >
       <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
@@ -119,7 +119,7 @@ export default function AppHeader({
         <Dropdown menu={{ items: userMenuItems }} placement="bottomRight" trigger={["click"]}>
           <div
             style={{ padding: "0 5px" }}
-            className="flex h-9 cursor-pointer justify-between rounded-3xl border border-gray-200 bg-gray-200"
+            className="flex h-9 cursor-pointer justify-between rounded-xl border border-slate-200 bg-slate-50"
           >
             <Avatar
               icon={<UserOutlined />}

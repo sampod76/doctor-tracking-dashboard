@@ -41,7 +41,7 @@ const baseQueryWithReAuth: BaseQueryFn<
   const isAuthRoute =
     url === "/auth/login" || url === "/auth/refresh-token";
 
-  // If another request is refreshing the token, wait for it.
+
   if (!isAuthRoute) {
     await mutex.waitForUnlock();
   }
@@ -50,7 +50,7 @@ const baseQueryWithReAuth: BaseQueryFn<
 
   let result = await rawBaseQuery(args, api, extraOptions);
 
-  // No need to refresh.
+
   if (
     isAuthRoute ||
     result.error?.status !== 401 ||
@@ -64,7 +64,7 @@ const baseQueryWithReAuth: BaseQueryFn<
   try {
     const currentAuth = getAuthState(api);
 
-    // Another request may already have refreshed the token.
+
     if (currentAuth.accessToken !== originalAccessToken) {
       return rawBaseQuery(args, api, extraOptions);
     }
@@ -88,7 +88,7 @@ const baseQueryWithReAuth: BaseQueryFn<
       extraOptions,
     );
 
-    // User may have logged out or logged in again while refresh was running.
+
     const latestAuth = getAuthState(api);
 
     if (
@@ -115,7 +115,7 @@ const baseQueryWithReAuth: BaseQueryFn<
 
     api.dispatch(login(response.data));
 
-    // Retry the original request only once.
+
     result = await rawBaseQuery(args, api, extraOptions);
 
     if (result.error?.status === 401) {

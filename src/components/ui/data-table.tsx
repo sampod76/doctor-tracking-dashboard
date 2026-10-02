@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import { TMeta } from "@/types";
 import { Table as AntdTable } from "antd";
 import { ColumnsType } from "antd/es/table";
@@ -48,14 +48,14 @@ export default function Table<TData>({
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  // Calculate column widths
+
   const adjustedColumns = columns.map((col) => {
-    // If the column has a fixed width, use it
+
     if (col.width) {
       return { ...col };
     }
 
-    // For columns without fixed width, distribute remaining space equally
+
     const columnsWithoutWidth = columns.filter((c) => !c.width).length;
 
     const totalFixedWidth = columns

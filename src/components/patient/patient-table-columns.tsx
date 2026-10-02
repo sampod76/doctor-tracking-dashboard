@@ -3,6 +3,7 @@ import { Button, Tag, Tooltip } from "antd";
 import type { ColumnsType } from "antd/es/table";
 import {
   TREATMENT_STATUS,
+  type PatientDoctor,
   type PatientSortBy,
   type PatientSortOrder,
   type TPatient,
@@ -20,6 +21,23 @@ export const formatDate = (value: string | null) => {
   const date = new Date(value);
   return Number.isNaN(date.getTime()) ? "—" : date.toLocaleDateString();
 };
+
+
+export const renderDoctorRelationTooltip = (doctor: Partial<PatientDoctor>) => (
+  <div className="space-y-1">
+    <div>Med. Reg. No: {doctor.medicalRegistrationNo?.trim() || "N/A"}</div>
+    <div>
+      <span className="font-medium">Name:</span> {doctor.name?.trim() || "N/A"}
+    </div>
+    <div>
+      <span className="font-medium">Specialization:</span>{" "}
+      {doctor.specialization ? formatEnumLabel(doctor.specialization) : "N/A"}
+    </div>
+    <div>
+      <span className="font-medium">Email:</span> {doctor.email?.trim() || "N/A"}
+    </div>
+  </div>
+);
 
 const renderEllipsis = (value: string | number | null | undefined) => {
   const text = value === null || value === undefined || value === "" ? "—" : String(value);
@@ -76,6 +94,23 @@ export const getPatientColumns = ({
       key: "gender",
       width: 90,
       render: (value: string) => renderEllipsis(formatEnumLabel(value)),
+    },
+    {
+      title: "Doctor",
+      key: "doctor",
+      width: 160,
+      render: (_: unknown, record) => {
+        const doctor = record.doctor?.[0];
+        if (!doctor) return "—";
+
+        return (
+          <Tooltip title={renderDoctorRelationTooltip(doctor)}>
+            <span className="block w-full cursor-help overflow-hidden text-ellipsis whitespace-nowrap">
+              {doctor.name || "—"}
+            </span>
+          </Tooltip>
+        );
+      },
     },
     {
       title: "Treatment Status",

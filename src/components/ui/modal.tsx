@@ -28,6 +28,9 @@ type ModalComponentProps = {
   button?: ReactNode;
   loading?: boolean;
   width?: number;
+  className?: string;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
 };
 
 const ModalComponent = ({
@@ -35,9 +38,18 @@ const ModalComponent = ({
   buttonText,
   button,
   width,
+  className,
   loading = false,
+  open: controlledOpen,
+  onOpenChange,
 }: ModalComponentProps) => {
-  const [open, setOpen] = useState(false);
+  const [internalOpen, setInternalOpen] = useState(false);
+  const open = controlledOpen ?? internalOpen;
+  const setOpen: ModalContextType["setOpen"] = (next) => {
+    const value = typeof next === "function" ? next(open) : next;
+    if (controlledOpen === undefined) setInternalOpen(value);
+    onOpenChange?.(value);
+  };
 
   const openModal = () => {
     setOpen(true);
@@ -59,13 +71,14 @@ const ModalComponent = ({
       <>
         {button ? (
           <div onClick={openModal}>{button}</div>
-        ) : (
+        ) : controlledOpen === undefined ? (
           <Button type="default" onClick={openModal}>
             {buttonText || "Open Modal"}
           </Button>
-        )}
+        ) : null}
 
         <Modal
+          className={className}
           open={open}
           confirmLoading={loading}
           onCancel={closeModal}

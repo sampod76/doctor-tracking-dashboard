@@ -31,7 +31,7 @@ export default function DoctorsPage() {
   const debouncedSearch = useDebounced({ searchQuery: searchTerm, delay: 350 });
 
   const params: DoctorsQueryParams = { page, limit, sortBy, sortOrder };
-  // Clearing a text filter takes effect immediately, including when resetting filters.
+
   if (searchTerm.trim() && debouncedSearch.trim()) params.searchTerm = debouncedSearch.trim();
 
   if (specialization !== undefined) params.specialization = specialization;

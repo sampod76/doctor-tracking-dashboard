@@ -75,8 +75,8 @@ export default function ErrorBounderCom({ children }: ErrorBounderComProps) {
       console.error("🚀 ~ Error Stack:", error.stack);
     }
 
-    // Later:
-    // send error to Sentry / Better Stack / custom API
+
+
   };
 
   const handleReset = () => {

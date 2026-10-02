@@ -24,6 +24,18 @@ export const sidebarData: SidebarData[] = [
         url: "/dashboard/patients",
         icon: ContactsTwoTone,
       },
+      {
+        title: "Profile",
+        key: "/dashboard/profile",
+        url: "/dashboard/patients",
+        icon: ContactsTwoTone,
+      },
+      {
+        title: "Settings",
+        key: "/dashboard/settings",
+        url: "/dashboard/settings",
+        icon: ContactsTwoTone,
+      },
     ],
   },
 ];

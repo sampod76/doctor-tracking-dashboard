@@ -1,9 +1,10 @@
 import Table from "@/components/ui/data-table";
 import type { TMeta } from "@/types";
 import type { DoctorSortBy, DoctorSortOrder, TDoctor } from "@/types/doctor";
-import { getDoctorColumns } from "./doctor-table-columns";
+import { useDoctorColumns } from "./doctor-table-columns";
 
-import { useRouter } from "next/navigation";
+import { useState } from "react";
+import EditDoctorForm from "./edit-doctor-form";
 
 type DoctorTableProps = {
   doctors: TDoctor[];
@@ -34,11 +35,11 @@ export default function DoctorTable({
   changeSortBy,
   changeSortOrder,
 }: DoctorTableProps) {
-  const router = useRouter();
-  const columns = getDoctorColumns({
+  const [editingDoctor, setEditingDoctor] = useState<TDoctor>();
+  const columns = useDoctorColumns({
     sortBy,
     sortOrder,
-    onView: (record) => router.push(`/dashboard/doctors/${record._id}`),
+    onEdit: setEditingDoctor,
   });
   return (
     <div className="rounded-2xl border border-slate-200 bg-white p-2 shadow-lg shadow-blue-200 sm:p-5">
@@ -56,6 +57,9 @@ export default function DoctorTable({
         setSortOrder={changeSortOrder}
         rowKey="_id"
       />
+      {editingDoctor && (
+        <EditDoctorForm doctor={editingDoctor} onClose={() => setEditingDoctor(undefined)} />
+      )}
     </div>
   );
 }

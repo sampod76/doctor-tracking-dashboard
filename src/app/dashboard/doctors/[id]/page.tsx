@@ -1,6 +1,6 @@
 "use client";
 
-import DoctorPatientsSection from "@/components/doctor/doctor-patients-section";
+import PatientManagement from "@/components/patient/patient-management";
 import DoctorProfileCard from "@/components/doctor/doctor-profile-card";
 import { useGetDoctorByIdQuery } from "@/redux/features/doctor/doctorApi";
 import { apiErrorMessage } from "@/utils/api-error";
@@ -37,8 +37,8 @@ export default function DoctorDetailsPage() {
           <ArrowLeftOutlined /> Doctors
         </Link>
       </header>
-      <div className="grid min-w-0 items-start gap-6 xl:grid-cols-[340px_minmax(0,1fr)]">
-        <div className="min-w-0 self-start xl:sticky xl:top-24">
+      <div className="grid min-w-0 gap-6">
+        <div className="min-w-0">
           {isLoading || (isFetching && !response) ? (
             <div
               aria-label="Loading doctor profile"
@@ -72,7 +72,9 @@ export default function DoctorDetailsPage() {
             <DoctorProfileCard doctor={response.data} />
           ) : null}
         </div>
-        <DoctorPatientsSection key={id} doctorId={id} />
+        {response?.success && response.data && !notFound && (
+          <PatientManagement key={id} doctorId={id} />
+        )}
       </div>
     </div>
   );

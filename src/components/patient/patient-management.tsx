@@ -1,13 +1,17 @@
 "use client";
 
-import { FilterOutlined, TeamOutlined } from "@ant-design/icons";
+import PatientHeader from "@/components/patient/patient-header";
+import PatientCreateModal from "./patient-create-modal";
 import PatientFilters, {
+  type DoctorOption,
   type PatientFilterValuesProps,
 } from "@/components/patient/patient-filters";
 import PatientFilterDrawer from "@/components/patient/patient-filter-drawer";
 import PatientTable from "@/components/patient/patient-table";
 import { useDebounced } from "@/hooks/use-debounce";
+import { useGetDoctorsQuery } from "@/redux/features/doctor/doctorApi";
 import { useGetPatientsQuery } from "@/redux/features/patient/patientApi";
+import type { DoctorsQueryParams } from "@/types/doctor";
 import {
   PATIENT_SORT_FIELDS,
   type ENUM_GENDER,
@@ -20,11 +24,15 @@ import { apiErrorMessage } from "@/utils/api-error";
 import { Alert, Button } from "antd";
 import { useState } from "react";
 
-export default function DoctorPatientsSection({ doctorId }: { doctorId: string }) {
+export default function PatientManagement({ doctorId: providedDoctorId }: { doctorId?: string }) {
+  const [createOpen, setCreateOpen] = useState(false);
   const [page, setPage] = useState(1);
   const [limit, setLimit] = useState(10);
   const [searchTerm, setSearchTerm] = useState("");
   const [filterOpen, setFilterOpen] = useState(false);
+  const [doctorId, setDoctorId] = useState<string>();
+  const [selectedDoctor, setSelectedDoctor] = useState<DoctorOption>();
+  const [doctorSearchTerm, setDoctorSearchTerm] = useState("");
   const [gender, setGender] = useState<ENUM_GENDER>();
   const [treatmentStatus, setTreatmentStatus] = useState<TREATMENT_STATUS>();
   const [followUpDate, setFollowUpDate] = useState<string>();
@@ -32,10 +40,13 @@ export default function DoctorPatientsSection({ doctorId }: { doctorId: string }
   const [sortBy, setSortBy] = useState<PatientSortBy>("createdAt");
   const [sortOrder, setSortOrder] = useState<PatientSortOrder>("desc");
   const debouncedSearch = useDebounced({ searchQuery: searchTerm, delay: 350 });
+  const debouncedDoctorSearch = useDebounced({ searchQuery: doctorSearchTerm, delay: 350 });
 
-  const params: PatientsQueryParams = { page, limit, doctorId, sortBy, sortOrder };
-  // Clearing filters takes effect immediately, even while debounce is pending.
+  const params: PatientsQueryParams = { page, limit, sortBy, sortOrder };
+
   if (searchTerm.trim() && debouncedSearch.trim()) params.searchTerm = debouncedSearch.trim();
+  const scopedDoctorId = providedDoctorId ?? doctorId;
+  if (scopedDoctorId) params.doctorId = scopedDoctorId;
   if (gender) params.gender = gender;
   if (treatmentStatus) params.treatmentStatus = treatmentStatus;
   if (followUpDate) params.followUpDate = followUpDate;
@@ -49,6 +60,35 @@ export default function DoctorPatientsSection({ doctorId }: { doctorId: string }
     refetch,
   } = useGetPatientsQuery(params, { skip: isDebouncing });
 
+  const doctorParams: DoctorsQueryParams = { page: 1, limit: 10 };
+  if (doctorSearchTerm.trim() && debouncedDoctorSearch.trim())
+    doctorParams.searchTerm = debouncedDoctorSearch.trim();
+  const isDoctorDebouncing =
+    Boolean(doctorSearchTerm.trim()) && doctorSearchTerm !== debouncedDoctorSearch;
+
+  const {
+    currentData: doctorsData,
+    isFetching: isDoctorsFetching,
+    error: doctorsError,
+    refetch: refetchDoctors,
+  } = useGetDoctorsQuery(doctorParams, { skip: Boolean(providedDoctorId) || isDoctorDebouncing });
+  const doctorOptions: DoctorOption[] = (doctorsData?.data ?? []).map((doctor) => ({
+    value: doctor._id,
+    label: doctor.name,
+    medicalRegistrationNo: doctor.medicalRegistrationNo,
+    specialization: doctor.specialization,
+    email: doctor.email,
+  }));
+
+  if (selectedDoctor && !doctorOptions.some((option) => option.value === selectedDoctor.value))
+    doctorOptions.unshift(selectedDoctor);
+
+  const changeDoctor = (value: string | undefined) => {
+    setDoctorId(value);
+    setSelectedDoctor(doctorOptions.find((option) => option.value === value));
+    setDoctorSearchTerm("");
+    setPage(1);
+  };
   const changeSortBy = (field: string) => {
     const validField = PATIENT_SORT_FIELDS.find((value) => value === field);
     if (validField) {
@@ -64,6 +104,9 @@ export default function DoctorPatientsSection({ doctorId }: { doctorId: string }
   };
   const resetFilters = () => {
     setSearchTerm("");
+    setDoctorId(undefined);
+    setSelectedDoctor(undefined);
+    setDoctorSearchTerm("");
     setGender(undefined);
     setTreatmentStatus(undefined);
     setFollowUpDate(undefined);
@@ -72,8 +115,7 @@ export default function DoctorPatientsSection({ doctorId }: { doctorId: string }
     setSortOrder("desc");
     setPage(1);
   };
-  const filterProps: PatientFilterValuesProps = {
-    hideDoctorFilter: true,
+  const commonFilters = {
     gender,
     treatmentStatus,
     followUpDate,
@@ -89,29 +131,35 @@ export default function DoctorPatientsSection({ doctorId }: { doctorId: string }
     changeSortOrder,
     resetFilters,
   };
+  const filterProps: PatientFilterValuesProps = providedDoctorId
+    ? { ...commonFilters, hideDoctorFilter: true }
+    : {
+        ...commonFilters,
+        doctorId,
+        doctorOptions,
+        doctorSearchTerm,
+        isDoctorsFetching: isDoctorsFetching || isDoctorDebouncing,
+        doctorError: doctorsError
+          ? apiErrorMessage(doctorsError, "Unable to load doctors.")
+          : undefined,
+        retryDoctors: () => {
+          if (!isDoctorDebouncing) void refetchDoctors();
+        },
+        setDoctorSearchTerm,
+        changeDoctor,
+      };
 
   return (
-    <section aria-label="Doctor patients" className="min-w-0">
-      <div className="mb-4 flex items-center justify-between gap-3">
-        <div>
-          <h2 className="m-0 flex items-center gap-2 text-xl font-semibold text-slate-900">
-            <TeamOutlined className="text-orange-500" /> Patients
-          </h2>
-          <p className="mb-0 mt-1 text-sm text-slate-500">
-            {data?.meta
-              ? `${data.meta.total} patients matching the current filters`
-              : "Patients assigned to this doctor"}
-          </p>
-        </div>
-        <Button
-          className="sm:hidden"
-          icon={<FilterOutlined />}
-          onClick={() => setFilterOpen(true)}
-          aria-expanded={filterOpen}
-        >
-          Filters
-        </Button>
-      </div>
+    <section
+      aria-label="Patient management"
+      className="min-w-0 rounded-2xl border border-slate-200 bg-white p-3 shadow-sm sm:p-5"
+    >
+      <PatientHeader
+        filterOpen={filterOpen}
+        onOpenFilters={() => setFilterOpen(true)}
+        onCreate={() => setCreateOpen(true)}
+        total={data?.meta?.total}
+      />
       <div className="space-y-2 sm:space-y-4">
         <PatientFilters searchTerm={searchTerm} setSearchTerm={setSearchTerm} {...filterProps} />
         {error && !isDebouncing && (
@@ -146,6 +194,9 @@ export default function DoctorPatientsSection({ doctorId }: { doctorId: string }
         onClose={() => setFilterOpen(false)}
         filters={filterProps}
       />
+      {createOpen && (
+        <PatientCreateModal doctorId={providedDoctorId} onClose={() => setCreateOpen(false)} />
+      )}
     </section>
   );
 }

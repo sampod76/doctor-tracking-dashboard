@@ -1,5 +1,11 @@
-import { EditOutlined, EyeOutlined } from "@ant-design/icons";
-import { Button, Space, Tag, Tooltip } from "antd";
+"use client";
+
+import { DeleteFilled, EditOutlined, EyeOutlined, MoreOutlined } from "@ant-design/icons";
+import { App, Dropdown, type MenuProps, Tag, Tooltip } from "antd";
+import Link from "next/link";
+import { useRef } from "react";
+import { useDeleteDoctorMutation } from "@/redux/features/doctor/doctorApi";
+import { apiErrorMessage } from "@/utils/api-error";
 import type { ColumnsType } from "antd/es/table";
 import {
   SPECIALIZATION,
@@ -37,16 +43,47 @@ const renderEllipsis = (value: string | number | null | undefined) => {
 };
 
 type DoctorColumnsOptions = {
-  onView: (doctor: TDoctor) => void;
+  onEdit: (doctor: TDoctor) => void;
   sortBy: DoctorSortBy;
   sortOrder: DoctorSortOrder;
 };
 
-export const getDoctorColumns = ({
+export const useDoctorColumns = ({
   sortBy,
   sortOrder,
-  onView,
+  onEdit,
 }: DoctorColumnsOptions): ColumnsType<TDoctor> => {
+  const { modal, message } = App.useApp();
+  const [deleteDoctor, { isLoading: isDeleting }] = useDeleteDoctorMutation();
+  const deletePending = useRef(false);
+  const handleDeleteConfirm = (record: TDoctor) => {
+    if (isDeleting || deletePending.current) return;
+    modal.confirm({
+      title: "Delete Doctor",
+      content: (
+        <span>
+          Are you sure you want to delete <strong>{record.name}</strong>?
+        </span>
+      ),
+      okText: "Delete",
+      cancelText: "Cancel",
+      okButtonProps: { danger: true },
+      centered: true,
+      onOk: async () => {
+        if (deletePending.current) return;
+        deletePending.current = true;
+        try {
+          await deleteDoctor(record._id).unwrap();
+          message.success("Doctor deleted successfully.");
+        } catch (error: unknown) {
+          message.error(apiErrorMessage(error, "Failed to delete doctor"));
+          throw error;
+        } finally {
+          deletePending.current = false;
+        }
+      },
+    });
+  };
   const sortState = (field: DoctorSortBy) => ({
     sorter: true,
     sortOrder:
@@ -60,6 +97,7 @@ export const getDoctorColumns = ({
       key: "name",
       width: 180,
       ...sortState("name"),
+
       render: renderEllipsis,
     },
     {
@@ -96,9 +134,9 @@ export const getDoctorColumns = ({
       render: renderEllipsis,
     },
     {
-      title: "Phone",
-      dataIndex: "phone",
-      key: "phone",
+      title: "Reg.No",
+      dataIndex: "medicalRegistrationNo",
+      key: "medicalRegistrationNo",
       width: 140,
       render: renderEllipsis,
     },
@@ -153,31 +191,45 @@ export const getDoctorColumns = ({
     {
       title: "Actions",
       key: "actions",
-      width: 110,
+      width: 70,
       fixed: "right",
       align: "center",
-      render: (_, record) => (
-        <Space size={4}>
-          <Tooltip title="View">
-            <Button
-              type="text"
-              icon={<EyeOutlined />}
-              aria-label={`View ${record.name}`}
-              onClick={() => onView(record)}
-            />
-          </Tooltip>
+      render: (_, record) => {
+        const items: MenuProps["items"] = [
+          {
+            key: "view",
+            icon: <EyeOutlined />,
+            label: (
+              <Link href={`/dashboard/doctors/${encodeURIComponent(record._id)}`}>
+                Profile & Patients
+              </Link>
+            ),
+          },
+          {
+            key: "edit",
+            icon: <EditOutlined />,
+            label: "Edit Doctor",
+            onClick: () => onEdit(record),
+          },
+          {
+            type: "divider",
+          },
+          {
+            key: "delete",
+            icon: <DeleteFilled />,
+            label: "Delete Doctor",
+            danger: true,
+            disabled: isDeleting,
+            onClick: () => handleDeleteConfirm(record),
+          },
+        ];
 
-          <Tooltip title="Edit">
-            <Button
-              type="text"
-              icon={<EditOutlined />}
-              onClick={() => {
-                console.log("Edit doctor:", record);
-              }}
-            />
-          </Tooltip>
-        </Space>
-      ),
+        return (
+          <Dropdown menu={{ items }} trigger={["hover"]} placement="bottomRight">
+            <MoreOutlined />
+          </Dropdown>
+        );
+      },
     },
   ];
 };

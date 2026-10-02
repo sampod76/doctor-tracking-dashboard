@@ -16,7 +16,7 @@ export default function DashLayout({ children }: { children: React.ReactNode }) 
   const isMobile = useMobile();
   const pathname = usePathname();
 
-  // Get page title from pathname
+
 
   useEffect(() => {
     if (isMobile) {
@@ -84,7 +84,7 @@ export default function DashLayout({ children }: { children: React.ReactNode }) 
         <Content
           className="dashboard-content"
           style={{
-            // margin: "18px",
+
             padding: 0,
             minHeight: 280,
             overflow: "hidden",

@@ -7,8 +7,8 @@ interface PermissionGuardProps {
   children: ReactNode;
   fallback?: ReactNode;
 }
-// The current backend exposes roles, but no granular permissions. Fail closed
-// for permission requirements instead of trusting obsolete permission cookies.
+
+
 export default function PermissionGuard({
   permission,
   children,

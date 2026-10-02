@@ -6,12 +6,21 @@ import type {
   DoctorsQueryParams,
   DoctorsResponse,
   TDoctor,
+  UpdateDoctorValues,
 } from "@/types/doctor";
 import type { TResponse } from "@/types/global";
 const URL = "/doctors";
 
 export const doctorApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
+    updateDoctor: builder.mutation<TResponse<TDoctor>, { id: string; body: UpdateDoctorValues }>({
+      query: ({ id, body }) => ({
+        url: `${URL}/${encodeURIComponent(id)}`,
+        method: "PATCH",
+        body,
+      }),
+      invalidatesTags: [tagTypes.doctor],
+    }),
     getDoctorById: builder.query<TResponse<DoctorDetails>, string>({
       query: (id) => ({ url: `${URL}/${encodeURIComponent(id)}`, method: "GET" }),
       providesTags: [tagTypes.doctor],
@@ -28,8 +37,20 @@ export const doctorApi = baseApi.injectEndpoints({
       }),
       invalidatesTags: [tagTypes.doctor],
     }),
+    deleteDoctor: builder.mutation<TResponse<TDoctor>, string>({
+      query: (id) => ({
+        url: `${URL}/${encodeURIComponent(id)}`,
+        method: "DELETE",
+      }),
+      invalidatesTags: [tagTypes.doctor],
+    }),
   }),
 });
 
-export const { useGetDoctorsQuery, useGetDoctorByIdQuery, useCreateDoctorAccountMutation } =
-  doctorApi;
+export const {
+  useGetDoctorsQuery,
+  useGetDoctorByIdQuery,
+  useCreateDoctorAccountMutation,
+  useUpdateDoctorMutation,
+  useDeleteDoctorMutation,
+} = doctorApi;
