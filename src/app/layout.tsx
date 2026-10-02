@@ -1,4 +1,5 @@
 import { ThemeProvider } from "@/components/theme-context";
+import ImagePreloads from "@/components/shared/image-preloads";
 
 import { AntdRegistry } from "@ant-design/nextjs-registry";
 import { App as AntdApp } from "antd";
@@ -22,6 +23,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
+      <head>
+        <ImagePreloads />
+      </head>
       <body className="custom-sidebar-menu" suppressHydrationWarning>
         <ReduxProvider>
           <ThemeProvider>

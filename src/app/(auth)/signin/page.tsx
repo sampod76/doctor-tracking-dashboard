@@ -5,6 +5,7 @@ import { baseApi } from "@/redux/api/baseApi";
 import { useAppDispatch, useAppSelector } from "@/redux/hooks";
 import type { LoginPayload } from "@/types/auth";
 import { apiErrorMessage } from "@/utils/api-error";
+import { authHeroImage, authLogoImage } from "@/config/auth-images";
 import { ArrowRightOutlined, LockOutlined, UserOutlined } from "@ant-design/icons";
 import { App, Button, Form, Input } from "antd";
 import Image from "next/image";
@@ -47,16 +48,13 @@ export default function LoginPage() {
     form.setFieldsValue({ email: DEMO_EMAIL, password: DEMO_PASSWORD });
   }
   return (
-    <main className="flex min-h-[100svh] min-h-screen items-center justify-center bg-sky-50 bg-[url('/background.png')] bg-cover bg-center bg-no-repeat px-4 py-8 sm:px-6 lg:px-8">
+    <main className="flex min-h-[100svh] min-h-screen items-center justify-center bg-sky-50 bg-[url('/background.webp')] bg-cover bg-center bg-no-repeat px-4 py-8 sm:px-6 lg:px-8">
       <div className="grid w-full max-w-[1500px] items-center lg:grid-cols-[1.1fr_0.9fr] lg:gap-8 xl:gap-12">
         <div className="hidden min-w-0 items-center justify-center lg:flex" aria-hidden="true">
           <Image
-            src="/auth-banner.jpg"
+            {...authHeroImage}
             alt=""
-            width={1536}
-            height={1024}
             priority
-            sizes="(min-width: 1564px) 799px, 55vw"
             className="h-auto max-h-[650px] w-full object-contain"
           />
         </div>
@@ -67,12 +65,9 @@ export default function LoginPage() {
             aria-label="Doctor Tracker Home"
           >
             <Image
-              src="/auth-logo.png"
-              width={900}
-              height={1120}
+              {...authLogoImage}
               alt="Doctor Tracker"
               priority
-              sizes="(min-width: 1280px) 152px, 128px"
               className="h-auto w-32 object-contain xl:w-[152px]"
             />
           </Link>

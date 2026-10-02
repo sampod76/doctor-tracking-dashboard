@@ -32,7 +32,7 @@ const features = [
 
 export default function Page() {
   return (
-    <main className="min-h-[100svh] bg-[#f4fcff] bg-[url('/background.png')] bg-cover bg-center bg-no-repeat px-5 py-10 font-sans text-[#101d46] sm:px-8 lg:flex lg:items-center lg:py-12">
+    <main className="min-h-[100svh] bg-[#f4fcff] bg-[url('/background.webp')] bg-cover bg-center bg-no-repeat px-5 py-10 font-sans text-[#101d46] sm:px-8 lg:flex lg:items-center lg:py-12">
       <div className="mx-auto w-full max-w-7xl">
         <section
           aria-labelledby="landing-heading"
@@ -68,7 +68,7 @@ export default function Page() {
           </div>
           <div className="mx-auto w-full max-w-lg lg:max-w-xl">
             <Image
-              src="/doctor.png"
+              src="/doctor.webp"
               alt="Doctor working at a laptop with an illustration of doctor, patient and follow-up management"
               width={1254}
               height={1254}

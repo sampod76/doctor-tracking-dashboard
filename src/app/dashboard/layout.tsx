@@ -22,7 +22,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
   return (
     <DashLayout>
-      <div className="min-h-[calc(100vh-80px)] bg-[url('/background.png')] bg-cover bg-center bg-no-repeat">
+      <div className="min-h-[calc(100vh-80px)] bg-[url('/background.webp')] bg-cover bg-center bg-no-repeat">
         <div className="flow-root min-h-[inherit] bg-white/60">{children}</div>
       </div>
     </DashLayout>

@@ -82,7 +82,7 @@ export default function RouteState({
     );
   }
   return (
-    <main className="flex min-h-[100svh] min-h-screen items-center justify-center bg-sky-50 bg-[url('/background.png')] bg-cover bg-center bg-no-repeat px-4 py-8 sm:px-6">
+    <main className="flex min-h-[100svh] min-h-screen items-center justify-center bg-sky-50 bg-[url('/background.webp')] bg-cover bg-center bg-no-repeat px-4 py-8 sm:px-6">
       {variant === "auth" ? (
         <div className="grid w-full max-w-[1500px] items-center lg:grid-cols-[1.1fr_0.9fr] lg:gap-8 xl:gap-12">
           <div className="hidden items-center justify-center lg:flex" aria-hidden="true">

@@ -22,6 +22,16 @@ const nextConfig = {
   },
 
   trailingSlash: false,
+
+  async headers() {
+    return [
+      {
+        // Content-hashed image names can be cached across deployments safely.
+        source: "/:asset(auth-banner|auth-logo|background).:hash([a-f0-9]{12}).webp",
+        headers: [{ key: "Cache-Control", value: "public, max-age=31536000, immutable" }],
+      },
+    ];
+  },
 };
 
 export default nextConfig;

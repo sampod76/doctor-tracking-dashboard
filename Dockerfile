@@ -65,6 +65,11 @@ COPY --from=builder /app/.next/static ./.next/static
 COPY --from=builder /app/public ./public
 COPY ecosystem.config.js ./ecosystem.config.js
 
+# Next Image writes resized variants here while the server runs as node.
+RUN mkdir -p .next/cache/images && chown -R node:node .next/cache
+# Fail the image build if standalone tracing omitted the native optimizer.
+RUN node -e "require('sharp')"
+
 
 
 COPY --chown=node:node docker-entry.sh ./docker-entry.sh
