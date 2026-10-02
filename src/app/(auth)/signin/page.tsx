@@ -5,11 +5,18 @@ import { baseApi } from "@/redux/api/baseApi";
 import { useAppDispatch, useAppSelector } from "@/redux/hooks";
 import type { LoginPayload } from "@/types/auth";
 import { apiErrorMessage } from "@/utils/api-error";
-import { LockOutlined, UserOutlined } from "@ant-design/icons";
+import { ArrowRightOutlined, LockOutlined, UserOutlined } from "@ant-design/icons";
 import { App, Button, Form, Input } from "antd";
+import Image from "next/image";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
+
+const DEMO_EMAIL = "admin@doctortracker.com";
+const DEMO_PASSWORD = "Admin@12345";
+
 export default function LoginPage() {
+  const [form] = Form.useForm<LoginPayload>();
   const { message } = App.useApp();
   const [signIn, { isLoading }] = useLoginMutation();
   const dispatch = useAppDispatch();
@@ -36,32 +43,125 @@ export default function LoginPage() {
       message.error(apiErrorMessage(error, "Unable to sign in. Please try again."));
     }
   }
+  function handleDemoFill() {
+    form.setFieldsValue({ email: DEMO_EMAIL, password: DEMO_PASSWORD });
+  }
   return (
-    <div>
-      <h1 className="mb-3 text-center text-3xl font-bold">Sign In</h1>
-      <p className="mb-8 text-center text-gray-500">Sign in with your email and password</p>
-      <Form<LoginPayload> layout="vertical" onFinish={handleLogin} disabled={isLoading}>
-        <Form.Item
-          name="email"
-          label="Email"
-          rules={[
-            { required: true, message: "Email is required" },
-            { type: "email", message: "Enter a valid email" },
-          ]}
-        >
-          <Input prefix={<UserOutlined />} autoComplete="username" size="large" />
-        </Form.Item>
-        <Form.Item
-          name="password"
-          label="Password"
-          rules={[{ required: true, message: "Password is required" }]}
-        >
-          <Input.Password prefix={<LockOutlined />} autoComplete="current-password" size="large" />
-        </Form.Item>
-        <Button type="primary" htmlType="submit" loading={isLoading} block size="large">
-          Sign In
-        </Button>
-      </Form>
-    </div>
+    <main className="flex min-h-[100svh] min-h-screen items-center justify-center bg-sky-50 bg-[url('/background.png')] bg-cover bg-center bg-no-repeat px-4 py-8 sm:px-6 lg:px-8">
+      <div className="grid w-full max-w-[1500px] items-center lg:grid-cols-[1.1fr_0.9fr] lg:gap-8 xl:gap-12">
+        <div className="hidden min-w-0 items-center justify-center lg:flex" aria-hidden="true">
+          <Image
+            src="/auth-banner.jpg"
+            alt=""
+            width={1536}
+            height={1024}
+            priority
+            sizes="(min-width: 1564px) 799px, 55vw"
+            className="h-auto max-h-[650px] w-full object-contain"
+          />
+        </div>
+        <section className="mx-auto w-full max-w-[480px] rounded-3xl border border-white/70 bg-white/90 px-6 py-8 shadow-[0_16px_48px_rgba(42,112,170,0.08)] backdrop-blur-sm sm:px-10 sm:py-10 lg:px-8 xl:px-10 xl:py-12">
+          <Link
+            href="/"
+            className="mx-auto mb-6 flex w-fit justify-center rounded-lg focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-blue-500"
+            aria-label="Doctor Tracker Home"
+          >
+            <Image
+              src="/auth-logo.png"
+              width={900}
+              height={1120}
+              alt="Doctor Tracker"
+              priority
+              sizes="(min-width: 1280px) 152px, 128px"
+              className="h-auto w-32 object-contain xl:w-[152px]"
+            />
+          </Link>
+          <h1 className="mb-3 text-center text-3xl font-bold tracking-tight text-[#101d46] xl:text-4xl">
+            Sign In
+          </h1>
+          <p className="mb-8 text-center text-sm leading-6 text-slate-500 sm:text-base">
+            Sign in with your email and password
+          </p>
+          <Form<LoginPayload>
+            form={form}
+            layout="vertical"
+            onFinish={handleLogin}
+            disabled={isLoading}
+            className="w-full"
+          >
+            <Form.Item
+              name="email"
+              label="Email"
+              rules={[
+                { required: true, message: "Email is required" },
+                { type: "email", message: "Enter a valid email" },
+              ]}
+              className="mb-5"
+            >
+              <Input
+                prefix={<UserOutlined className="text-slate-500" />}
+                placeholder="Enter your email address"
+                autoComplete="username"
+                size="large"
+                className="rounded-xl px-4"
+                style={{
+                  height: 50,
+                  fontSize: 15,
+                  borderColor: "#cbd5e1",
+                }}
+              />
+            </Form.Item>
+
+            <Form.Item
+              name="password"
+              label="Password"
+              rules={[{ required: true, message: "Password is required" }]}
+              className="mb-6"
+            >
+              <Input.Password
+                prefix={<LockOutlined className="text-slate-500" />}
+                placeholder="Enter your password"
+                autoComplete="current-password"
+                size="large"
+                className="rounded-xl px-4"
+                style={{
+                  height: 50,
+                  fontSize: 15,
+                  borderColor: "#cbd5e1",
+                }}
+              />
+            </Form.Item>
+
+            <Button
+              type="primary"
+              htmlType="submit"
+              loading={isLoading}
+              disabled={isLoading}
+              block
+              size="large"
+              className="rounded-xl text-base font-semibold"
+              style={{
+                height: 50,
+                backgroundColor: "#3b82f6",
+                borderColor: "#3b82f6",
+              }}
+            >
+              Sign In <ArrowRightOutlined />
+            </Button>
+            <Button
+              type="default"
+              htmlType="button"
+              block
+              size="large"
+              onClick={handleDemoFill}
+              disabled={isLoading}
+              className="!mt-3 !h-[50px] !rounded-xl !text-base !font-medium [&:not(:disabled):hover]:!bg-blue-50 [&:not(:disabled)]:!border-blue-500 [&:not(:disabled)]:!bg-white [&:not(:disabled)]:!text-blue-600"
+            >
+              Auto Fill Admin Login
+            </Button>
+          </Form>
+        </section>
+      </div>
+    </main>
   );
 }

@@ -3,11 +3,11 @@ import RouteState, { type RouteErrorProps } from "@/components/shared/route-stat
 export default function Error({ reset }: RouteErrorProps) {
   return (
     <RouteState
-      variant="global"
-      title="Something went wrong"
-      description="We couldn't load this page. Please try again or return home."
-      homeHref="/"
-      homeLabel="Home"
+      variant="auth"
+      title="Unable to load the sign-in page"
+      description="Something went wrong. Please try again or return to sign in."
+      homeHref="/signin"
+      homeLabel="Go to Sign In"
       reset={reset}
     />
   );

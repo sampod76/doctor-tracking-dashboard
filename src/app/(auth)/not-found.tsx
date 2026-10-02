@@ -2,12 +2,12 @@ import RouteState from "@/components/shared/route-state";
 export default function NotFound() {
   return (
     <RouteState
-      variant="global"
+      variant="auth"
       statusCode="404"
       title="Page not found"
-      description="The page you're looking for doesn't exist. Check the address or return home to continue."
-      homeHref="/"
-      homeLabel="Home"
+      description="This sign-in page doesn't exist. Return to sign in to access Doctor Tracker."
+      homeHref="/signin"
+      homeLabel="Go to Sign In"
     />
   );
 }

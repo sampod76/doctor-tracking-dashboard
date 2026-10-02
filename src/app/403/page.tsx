@@ -1,9 +1,9 @@
 "use client";
 
 import useAuth from "@/hooks/useAuth";
+import RouteState from "@/components/shared/route-state";
 
-import { App, Button, Result } from "antd";
-import Link from "next/link";
+import { App, Button } from "antd";
 
 export default function ForbiddenPage() {
   const { message } = App.useApp();
@@ -15,29 +15,16 @@ export default function ForbiddenPage() {
   }
 
   return (
-    <div
-      style={{
-        height: "100vh",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-      }}
+    <RouteState
+      statusCode="403"
+      title="Access Denied"
+      description="You don't have permission to access this page. Return to your dashboard or sign out to use another account."
+      homeHref="/dashboard"
+      homeLabel="Go to Dashboard"
     >
-      <Result
-        status="403"
-        title="403"
-        subTitle="Sorry, you are not authorized to access this page."
-        extra={
-          <div className="flex items-center justify-center gap-4">
-            <Link href={"/dashboard"}>
-              <Button type="primary">Back Home</Button>
-            </Link>
-            <Button onClick={handleLogout} type="dashed">
-              Logout
-            </Button>
-          </div>
-        }
-      />
-    </div>
+      <Button onClick={handleLogout} type="dashed" size="large">
+        Logout
+      </Button>
+    </RouteState>
   );
 }
