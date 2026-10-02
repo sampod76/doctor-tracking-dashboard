@@ -101,7 +101,17 @@ A safe template is provided in [`.env.example`](./.env.example).
 NEXT_PUBLIC_BASE_URL=
 ```
 
-Set this to the backend origin without `/api/v1`; the API client appends that prefix. If unset, the frontend uses the API host defined in `src/config/index.ts`. Next.js embeds `NEXT_PUBLIC_*` values at build time, so configure the host before building and keep secrets out of these variables. The template also sets `NODE_ENV=development`; the Next.js scripts select the environment for their respective modes.
+Set this to the backend origin without `/api/v1`; the API client appends that prefix. Missing configuration raises an error instead of silently choosing another host. Next.js embeds `NEXT_PUBLIC_*` values at build time, so configure the host before building and keep secrets out of these variables. The template also sets `NODE_ENV=development`; the Next.js scripts select the environment for their respective modes.
+
+For production, set the GitHub Repository Variable `NEXT_PUBLIC_BASE_URL` to `https://api-doctor.iblossomlearn.org`. The deploy workflow validates it and passes it as a Docker build argument; the builder validates it before `pnpm build`. `.dockerignore` excludes `.env*` and `.next`, so environment files and existing local builds are not copied into the image. Changing the build argument invalidates the environment-dependent build layers.
+
+For a local Docker build, Compose reads `NEXT_PUBLIC_BASE_URL` from the shell or the project `.env` and passes it through `build.args`:
+
+```sh
+docker compose --profile app up -d --build app
+```
+
+On the VPS, `deploy.sh` pulls the GHCR image and starts it with `docker-compose.pro.yml` and `--no-build`. Keep that Compose file and the updated script in `~/apps/doctor-tracking-dashboard`. The VPS runtime `env_file` cannot change the API URL already compiled into browser JavaScript; changing the URL requires rebuilding and deploying the image.
 
 ## System Architecture
 

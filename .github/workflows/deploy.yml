@@ -29,8 +29,15 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build and push Docker image
+        env:
+          NEXT_PUBLIC_BASE_URL: ${{ vars.NEXT_PUBLIC_BASE_URL }}
         run: |
           set -Eeuo pipefail
+
+          if [ -z "$NEXT_PUBLIC_BASE_URL" ]; then
+            echo "NEXT_PUBLIC_BASE_URL is not configured" >&2
+            exit 1
+          fi
 
           export DOCKER_BUILDKIT=1
 
@@ -41,7 +48,7 @@ jobs:
           echo "Building Docker image: ${IMAGE}"
 
           docker build \
-            --build-arg NEXT_PUBLIC_BASE_URL="${{ vars.NEXT_PUBLIC_BASE_URL }}" \
+            --build-arg NEXT_PUBLIC_BASE_URL="$NEXT_PUBLIC_BASE_URL" \
             -t "${IMAGE}" .
           docker push "${IMAGE}"
 

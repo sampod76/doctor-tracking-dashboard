@@ -13,7 +13,7 @@ log "Pulling latest image"
 docker pull "$IMAGE"
 
 log "Restarting frontend container"
-docker compose -f docker-compose.yml up -d --force-recreate app
+docker compose -f docker-compose.pro.yml up -d --no-build --force-recreate app
 
 log "Cleaning unused images"
 docker image prune -f

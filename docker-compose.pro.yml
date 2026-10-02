@@ -9,7 +9,7 @@ services:
 
     environment:
       NODE_ENV: production
-      NEXT_PUBLIC_BASE_URL: https://api-doctor.iblossomlearn.org
+      # NEXT_PUBLIC_BASE_URL is embedded by the GHCR build, not configured at runtime.
       HOSTNAME: 0.0.0.0
       PORT: 3000
 
