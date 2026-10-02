@@ -11,7 +11,7 @@ import { App, Button, Form, Input } from "antd";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 
 const DEMO_EMAIL = "admin@doctortracker.com";
 const DEMO_PASSWORD = "Admin@12345";
@@ -23,10 +23,22 @@ export default function LoginPage() {
   const dispatch = useAppDispatch();
   const router = useRouter();
   const token = useAppSelector((state) => state.auth.accessToken);
+  const redirectTimer = useRef<number>();
+  useEffect(() => () => window.clearTimeout(redirectTimer.current), []);
   useEffect(() => {
     if (token) router.replace("/dashboard");
   }, [token, router]);
+  function redirectToFallback() {
+    if (redirectTimer.current !== undefined) return;
+    message.info(
+      "We're having a temporary issue with the live server. You'll be redirected to our alternative hosting so you can continue using the application.",
+    );
+    redirectTimer.current = window.setTimeout(() => {
+      window.location.href = "https://doctor-tracker-pro.netlify.app/";
+    }, 1800);
+  }
   async function handleLogin(values: LoginPayload) {
+    if (redirectTimer.current !== undefined) return;
     try {
       const response = await signIn({
         email: values.email.trim().toLowerCase(),
@@ -34,7 +46,7 @@ export default function LoginPage() {
       }).unwrap();
       if (!response.success) {
         if (window.location.hostname === "doctor-tracker.iblossomlearn.org") {
-          window.location.href = "https://doctor-tracker-pro.netlify.app/";
+          redirectToFallback();
           return;
         }
         message.error(response.message || "Sign in failed");
@@ -46,7 +58,7 @@ export default function LoginPage() {
       router.replace("/dashboard");
     } catch (error) {
       if (window.location.hostname === "doctor-tracker.iblossomlearn.org") {
-        window.location.href = "https://doctor-tracker-pro.netlify.app/";
+        redirectToFallback();
         return;
       }
       message.error(apiErrorMessage(error, "Unable to sign in. Please try again."));
