@@ -1,87 +1,137 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import config from "@/config";
-import { tags, userTags } from "@/constants";
-import { logout, update } from "@/redux/features/auth/authSlice";
+import { login, logout } from "@/redux/features/auth/authSlice";
+import type { AuthState, RefreshTokenResponse } from "@/types/auth";
 import {
-    BaseQueryApi,
-    BaseQueryFn,
-    createApi,
-    DefinitionType,
-    FetchArgs,
-    fetchBaseQuery,
+  createApi,
+  fetchBaseQuery,
+  type BaseQueryFn,
+  type FetchArgs,
+  type FetchBaseQueryError,
 } from "@reduxjs/toolkit/query/react";
 import { Mutex } from "async-mutex";
-import { RootState } from "../store";
 
-const baseQuery = fetchBaseQuery({
-    baseUrl: `${config.host}/api/v1`,
-    credentials: "include",
-    prepareHeaders: (headers, { getState }) => {
-        const token = (getState() as RootState).auth.accessToken;
-        if (token) {
-            headers.set("authorization", `Bearer ${token}`);
-        }
-        headers.set(
-            "X-Time-Zone",
-            Intl.DateTimeFormat().resolvedOptions().timeZone,
-        );
-        return headers;
-    },
-});
+import { tagTypesList } from "../tag-types";
 
 const mutex = new Mutex();
 
-const baseQueryWithRefreshToken: BaseQueryFn<
-    FetchArgs,
-    BaseQueryApi,
-    DefinitionType
-> = async (args, api, extraOption): Promise<any> => {
-    // wait until the mutex is available without locking it
-    await mutex.waitForUnlock();
+const rawBaseQuery = fetchBaseQuery({
+  baseUrl: `${config.host}/api/v1`,
 
-    let result = await baseQuery(args, api, extraOption);
+  prepareHeaders: (headers, { getState }) => {
+    const { accessToken } = (getState() as { auth: AuthState }).auth;
 
-    if (result?.error?.status === 401) {
-        if (!mutex.isLocked()) {
-            const release = await mutex.acquire();
-
-            try {
-                const { handleRefreshToken } = await import("@/service/auth");
-                const res = await handleRefreshToken();
-
-                if (res?.success && res?.data?.accessToken) {
-                    api.dispatch(update({ accessToken: res.data.accessToken }));
-                    // Retry the original query with the new token
-                    result = await baseQuery(args, api, extraOption);
-                } else {
-                    // Refresh token is invalid/expired - sign the user out
-                    api.dispatch(logout());
-                    api.dispatch(baseApi.util.resetApiState());
-                    try {
-                        const { signout } = await import("@/service/auth");
-                        await signout();
-                    } catch {
-                        // Ignore Next.js redirect errors from server actions
-                    }
-                    if (typeof window !== "undefined") {
-                        window.location.href = "/auth/signin";
-                    }
-                }
-            } finally {
-                release();
-            }
-        } else {
-            // Another request is already refreshing - wait, then retry
-            await mutex.waitForUnlock();
-            result = await baseQuery(args, api, extraOption);
-        }
+    if (accessToken) {
+      headers.set("authorization", `Bearer ${accessToken}`);
     }
+
+    return headers;
+  },
+});
+
+const getAuthState = (api: Parameters<BaseQueryFn>[1]) =>
+  (api.getState() as { auth: AuthState }).auth;
+
+const baseQueryWithReAuth: BaseQueryFn<
+  string | FetchArgs,
+  unknown,
+  FetchBaseQueryError
+> = async (args, api, extraOptions) => {
+  const url = typeof args === "string" ? args : args.url;
+
+  const isAuthRoute =
+    url === "/auth/login" || url === "/auth/refresh-token";
+
+
+  if (!isAuthRoute) {
+    await mutex.waitForUnlock();
+  }
+
+  const originalAccessToken = getAuthState(api).accessToken;
+
+  let result = await rawBaseQuery(args, api, extraOptions);
+
+
+  if (
+    isAuthRoute ||
+    result.error?.status !== 401 ||
+    !originalAccessToken
+  ) {
     return result;
+  }
+
+  const release = await mutex.acquire();
+
+  try {
+    const currentAuth = getAuthState(api);
+
+
+    if (currentAuth.accessToken !== originalAccessToken) {
+      return rawBaseQuery(args, api, extraOptions);
+    }
+
+    const refreshToken = currentAuth.refreshToken;
+
+    if (!refreshToken) {
+      api.dispatch(logout());
+      api.dispatch(baseApi.util.resetApiState());
+
+      return result;
+    }
+
+    const refreshResult = await rawBaseQuery(
+      {
+        url: "/auth/refresh-token",
+        method: "POST",
+        body: { refreshToken },
+      },
+      api,
+      extraOptions,
+    );
+
+
+    const latestAuth = getAuthState(api);
+
+    if (
+      latestAuth.accessToken !== originalAccessToken ||
+      latestAuth.refreshToken !== refreshToken
+    ) {
+      return result;
+    }
+
+    const response = refreshResult.data as RefreshTokenResponse | undefined;
+
+    if (
+      !response?.success ||
+      !response.data?.accessToken ||
+      !response.data.refreshToken ||
+      !response.data.user ||
+      typeof response.data.expiresIn !== "number"
+    ) {
+      api.dispatch(logout());
+      api.dispatch(baseApi.util.resetApiState());
+
+      return result;
+    }
+
+    api.dispatch(login(response.data));
+
+
+    result = await rawBaseQuery(args, api, extraOptions);
+
+    if (result.error?.status === 401) {
+      api.dispatch(logout());
+      api.dispatch(baseApi.util.resetApiState());
+    }
+
+    return result;
+  } finally {
+    release();
+  }
 };
 
 export const baseApi = createApi({
-    reducerPath: "baseApi",
-    baseQuery: baseQueryWithRefreshToken,
-    endpoints: () => ({}),
-    tagTypes: [...Object.values(tags), ...Object.values(userTags)],
+  reducerPath: "baseApi",
+  baseQuery: baseQueryWithReAuth,
+  endpoints: () => ({}),
+  tagTypes: tagTypesList,
 });

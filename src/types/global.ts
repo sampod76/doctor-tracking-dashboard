@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import { BaseQueryApi } from "@reduxjs/toolkit/query";
 
 export type TError = {
@@ -19,7 +19,6 @@ export type TMeta = {
   limit: number;
   page: number;
   total: number;
-  totalPage: number;
 };
 
 export type TResponse<T> = {
@@ -55,55 +54,6 @@ export interface ErrorResponseData {
 export interface ErrorResponse {
   data: ErrorResponseData;
   status: boolean;
-}
-
-export type IImagePlatform = "imgbb" | "cloudinary" | "server" | "aws" | string;
-export const I_IMAGE_PLATFORM_ARRAY = ["imgbb", "cloudinary", "server", "aws"];
-
-export interface TFileDocument {
-  id?: string | null;
-  mimetype?: string;
-  server_url?: string;
-  filename?: string;
-  originalUrl?: string;
-  pre_url?: string;
-  modifyFileName?: string;
-  path?: string;
-  url?: string;
-  fileUniqueId?: string;
-  platform?: IImagePlatform;
-  file_type?: string;
-  cdn?: string;
-  size?: number;
-  createdAt?: string | null;
-  updatedAt?: string | null;
-  caption_title?: string;
-  thumb_image_size?: ThumbImageSize;
-  large_image_size?: LargeImageSize;
-  small_image_size?: SmallImageSize;
-  medium_image_size?: MediumImageSize;
-}
-
-
-
-export interface ThumbImageSize {
-  width: number;
-  height: number;
-}
-
-export interface LargeImageSize {
-  width: number;
-  height: number;
-}
-
-export interface SmallImageSize {
-  width: number;
-  height: number;
-}
-
-export interface MediumImageSize {
-  width: number;
-  height: number;
 }
 
 export interface SidebarData {

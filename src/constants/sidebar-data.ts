@@ -1,27 +1,47 @@
 import { SidebarData } from "@/types";
-import { AppstoreAddOutlined } from "@ant-design/icons";
+import {
+  MedicineBoxTwoTone,
+  DashboardTwoTone,
+  IdcardTwoTone,
+  RedEnvelopeTwoTone,
+  SettingTwoTone,
+} from "@ant-design/icons";
 
-/**
- * Minimal, neutral sidebar data used as a starting point for the
- * new application. The previous version of this file contained the
- * full old travel/news domain menu. Future projects should extend
- * `items` here as new features are added.
- *
- * Items use a generic permission string ("dashboard.view") so the
- * existing permission guard/middleware pipeline keeps working.
- */
 export const sidebarData: SidebarData[] = [
-    {
-        title: "General",
-        key: "General",
-        items: [
-            {
-                title: "Dashboard",
-                key: "/dashboard",
-                url: "/dashboard",
-                icon: AppstoreAddOutlined,
-                permission: "dashboard.view",
-            },
-        ],
-    },
+  {
+    title: "General",
+    key: "General",
+    items: [
+      {
+        title: "Dashboard",
+        key: "/dashboard",
+        url: "/dashboard",
+        icon: DashboardTwoTone,
+      },
+      {
+        title: "Doctors",
+        key: "/dashboard/doctors",
+        url: "/dashboard/doctors",
+        icon: MedicineBoxTwoTone,
+      },
+      {
+        title: "Patients",
+        key: "/dashboard/patients",
+        url: "/dashboard/patients",
+        icon: RedEnvelopeTwoTone,
+      },
+      {
+        title: "Profile",
+        key: "/dashboard/profile",
+        url: "/dashboard/profile",
+        icon: IdcardTwoTone,
+      },
+      {
+        title: "Settings",
+        key: "/dashboard/settings",
+        url: "/dashboard/settings",
+        icon: SettingTwoTone,
+      },
+    ],
+  },
 ];

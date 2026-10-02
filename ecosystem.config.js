@@ -1,4 +1,4 @@
-// ecosystem.config.js
+
 module.exports = {
   apps: [
     {
@@ -16,4 +16,3 @@ module.exports = {
     },
   ],
 };
-

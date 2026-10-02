@@ -1,267 +1,222 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
 "use client";
 
 import { sidebarData } from "@/constants";
-import { SidebarData, SidebarItem as ISidebarItem, TSession } from "@/types";
-import { getPermissionsCookie } from "@/utils/permissions";
-import { Layout, Menu, MenuProps } from "antd";
+import { useAppSelector } from "@/redux/hooks";
+import type { SidebarItem as ISidebarItem } from "@/types";
+
+import { Layout, Menu } from "antd";
+import type { MenuProps } from "antd";
+
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import type { ReactNode } from "react";
 
 const { Sider } = Layout;
 
+export const SIDEBAR_WIDTH = 220;
+export const COLLAPSED_SIDEBAR_WIDTH = 80;
+
 interface SidebarProps {
-    collapsed: boolean;
-    session: TSession | null;
+  collapsed: boolean;
+  isMobile?: boolean;
+  onMenuSelect?: () => void;
 }
 
-interface MenuItem {
-    key: string;
-    icon?: React.ReactNode;
-    label: React.ReactNode;
-    children?: MenuItem[];
-    permission?: string;
-    allowedRoles?: string[];
+interface SidebarMenuItem {
+  key: string;
+  url?: string;
+  icon?: ReactNode;
+  label: ReactNode;
+  children?: SidebarMenuItem[];
 }
 
-export default function Sidebar({ collapsed, session }: SidebarProps) {
-    const pathname = usePathname();
+const buildMenuItems = (items: ISidebarItem[] = [], userRole?: string): SidebarMenuItem[] => {
+  return items.flatMap((item) => {
+    if (item.allowedRoles?.length && (!userRole || !item.allowedRoles.includes(userRole))) {
+      return [];
+    }
+    const children = item.items?.length ? buildMenuItems(item.items, userRole) : undefined;
+    if (item.items?.length && !children?.length) {
+      return [];
+    }
 
-    const isSuperAdmin =
-        session?.roleCode === "super_admin" ||
-        session?.user_type === "super_admin" ||
-        session?.user_type === "superAdmin";
+    return [
+      {
+        key: item.key,
+        url: item.url,
+        icon: item.icon ? <item.icon /> : undefined,
+        label: item.url ? <Link href={normalizeUrl(item.url)}>{item.title}</Link> : item.title,
+        ...(children?.length ? { children } : {}),
+      },
+    ];
+  });
+};
 
-    const [userPermissions, setUserPermissions] = useState<Record<string, boolean>>(() => {
-        if (typeof document !== "undefined") {
-            return getPermissionsCookie();
+const normalizeUrl = (url: string) => {
+  return url.startsWith("/") ? url : `/${url}`;
+};
+
+const flattenMenuItems = (items: SidebarMenuItem[]): SidebarMenuItem[] => {
+  return items.flatMap((item) => [item, ...(item.children ? flattenMenuItems(item.children) : [])]);
+};
+
+const getSelectedMenuItem = (items: SidebarMenuItem[], pathname: string) => {
+  return flattenMenuItems(items)
+    .filter((item) => {
+      if (!item.url) return false;
+
+      const url = normalizeUrl(item.url);
+
+      if (pathname === url) {
+        return true;
+      }
+
+      if (url === "/dashboard") {
+        return false;
+      }
+
+      return pathname.startsWith(`${url}/`);
+    })
+    .sort((a, b) => {
+      const aLength = a.url?.length ?? 0;
+      const bLength = b.url?.length ?? 0;
+
+      return bLength - aLength;
+    })[0];
+};
+
+const getParentKeys = (
+  items: SidebarMenuItem[],
+  selectedKey?: string,
+  parents: string[] = [],
+): string[] => {
+  if (!selectedKey) return [];
+
+  for (const item of items) {
+    if (item.key === selectedKey) {
+      return parents;
+    }
+
+    if (item.children?.length) {
+      const result = getParentKeys(item.children, selectedKey, [...parents, item.key]);
+
+      if (result.length) {
+        return result;
+      }
+    }
+  }
+
+  return [];
+};
+
+const toAntdMenuItems = (items: SidebarMenuItem[]): MenuProps["items"] => {
+  return items.map(({ key, label, icon, children }) => ({
+    key,
+    label,
+    icon,
+    ...(children?.length
+      ? {
+          children: toAntdMenuItems(children),
         }
-        return {};
-    });
+      : {}),
+  }));
+};
 
-    useEffect(() => {
-        setUserPermissions(getPermissionsCookie());
-    }, [pathname]);
+export default function Sidebar({ collapsed, isMobile = false, onMenuSelect }: SidebarProps) {
+  const pathname = usePathname();
 
-    const convertToMenuItems = (
-        items: ISidebarItem[] = []
-    ): MenuItem[] => {
-        return items.map((item) => {
-            const menuItem: MenuItem = {
-                key: item.key,
-                icon: item.icon ? <item.icon /> : undefined,
-                label: item.url ? (
-                    <Link
-                        href={
-                            item.url.startsWith("/") ? item.url : `/${item.url}`
-                        }
-                    >
-                        {item.title}
-                    </Link>
-                ) : (
-                    item.title
-                ),
-                permission: item.permission,
-                allowedRoles: item.allowedRoles,
-            };
+  const user = useAppSelector((state) => state.auth.user);
 
-            if (item.items && item.items.length > 0) {
-                menuItem.children = convertToMenuItems(item.items);
-            }
+  const sidebarGroups = sidebarData
+    .map((group) => ({
+      ...group,
+      menuItems: buildMenuItems(group.items, user?.role),
+    }))
+    .filter((group) => group.menuItems.length > 0);
 
-            return menuItem;
-        });
-    };
+  const allMenuItems = sidebarGroups.flatMap((group) => group.menuItems);
 
-    const filterMenuByPermission = (
-        items: MenuItem[],
-        permissions: Record<string, boolean>
-    ): MenuItem[] => {
-        // Super Admin bypass: Show everything unconditionally!
-        if (isSuperAdmin) {
-            return items;
-        }
+  const selectedItem = getSelectedMenuItem(allMenuItems, pathname);
 
-        return items
-            .map((item) => {
-                // Role check if specified
-                if (
-                    item.allowedRoles &&
-                    item.allowedRoles.length > 0 &&
-                    session?.user_type &&
-                    !item.allowedRoles.includes(session.user_type)
-                ) {
-                    return null;
-                }
+  const defaultOpenKeys = getParentKeys(allMenuItems, selectedItem?.key);
 
-                // If item has children, filter children first
-                if (item.children && item.children.length > 0) {
-                    const filteredChildren = filterMenuByPermission(
-                        item.children,
-                        permissions
-                    );
+  return (
+    <Sider
+      className="dashboard-sidebar"
+      trigger={null}
+      collapsible
+      collapsed={collapsed}
+      collapsedWidth={isMobile ? 0 : COLLAPSED_SIDEBAR_WIDTH}
+      width={isMobile ? "min(200px, calc(100vw - 24px))" : SIDEBAR_WIDTH}
+      theme="light"
+      style={{
+        overflow: "hidden",
+        height: "100vh",
+        position: "fixed",
+        left: 0,
+        top: 0,
+        bottom: 0,
+        zIndex: isMobile && !collapsed ? 1001 : 1000,
+        background: "var(--color-bg-container, #ffffff)",
+        borderRight: isMobile && collapsed ? "none" : "1px solid rgba(226, 232, 240, 0.7)",
+        transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+      }}
+    >
+      <Link
+        href="/dashboard"
+        aria-label="Dashboard home"
+        onClick={onMenuSelect}
+        className="logo flex h-20 shrink-0 items-center justify-center py-4"
+        style={{
+          background: "var(--color-bg-container, #ffffff)",
+          color: "var(--color-text-base)",
+          transition: "all 0.3s ease",
+          position: "relative",
+          zIndex: 2,
+        }}
+      >
+        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full border border-black/5 bg-white shadow-sm">
+          <Image
+            src="/auth-logo.png"
+            alt="Logo"
+            width={34}
+            height={34}
+            priority
+            className="h-[34px] w-[34px] object-contain"
+          />
+        </div>
+      </Link>
 
-                    // If all children were filtered out
-                    if (filteredChildren.length === 0) {
-                        return null;
-                    }
-
-                    // If parent has a permission requirement of its own
-                    if (
-                        item.permission &&
-                        permissions[item.permission] !== true
-                    ) {
-                        return null;
-                    }
-
-                    return { ...item, children: filteredChildren };
-                }
-
-                // Leaf item permission check
-                if (item.permission) {
-                    return permissions[item.permission] === true ? item : null;
-                }
-
-                // No permission specified - allow
-                return item;
-            })
-            .filter(Boolean) as MenuItem[];
-    };
-
-    // Filter each group's items
-    const filteredSidebarGroups = useMemo(() => {
-        return sidebarData
-            .map((group) => {
-                const converted = convertToMenuItems(group.items);
-                const filtered = filterMenuByPermission(converted, userPermissions);
-                return {
-                    ...group,
-                    filteredItems: filtered,
-                };
-            })
-            .filter((group) => group.filteredItems.length > 0);
-    }, [userPermissions, isSuperAdmin, session?.user_type]);
-
-    const allFilteredItems = useMemo(() => {
-        return filteredSidebarGroups.flatMap((g) => g.filteredItems);
-    }, [filteredSidebarGroups]);
-
-    const getLevelKeys = (items: MenuItem[]) => {
-        const key: Record<string, number> = {};
-        const func = (items2: MenuItem[], level = 1) => {
-            items2.forEach((item) => {
-                if (item.key) key[item.key] = level;
-                if (item.children) func(item.children, level + 1);
-            });
-        };
-        func(items);
-        return key;
-    };
-
-    const levelKeys = getLevelKeys(allFilteredItems);
-    const [stateOpenKeys, setStateOpenKeys] = useState<string[]>([
-        pathname.split("/")[1] ? `/${pathname.split("/")[1]}` : "/dashboard",
-    ]);
-
-    const onOpenChange: MenuProps["onOpenChange"] = (openKeys) => {
-        const currentOpenKey = openKeys.find(
-            (key) => !stateOpenKeys.includes(key)
-        );
-        if (currentOpenKey !== undefined) {
-            const repeatIndex = openKeys
-                .filter((key) => key !== currentOpenKey)
-                .findIndex(
-                    (key) => levelKeys[key] === levelKeys[currentOpenKey]
-                );
-
-            setStateOpenKeys(
-                openKeys
-                    .filter((_, index) => index !== repeatIndex)
-                    .filter(
-                        (key) => levelKeys[key] <= levelKeys[currentOpenKey]
-                    )
-            );
-        } else {
-            setStateOpenKeys(openKeys);
-        }
-    };
-
-    return (
-        <Sider
-            trigger={null}
-            collapsible
-            collapsed={collapsed}
-            style={{
-                overflow: "hidden",
-                height: "100vh",
-                position: "fixed",
-                left: 0,
-                top: 0,
-                bottom: 0,
-                zIndex: 1000,
-                background: "var(--sidebar-bg, #0f172a)",
-                borderRight: "1px solid rgba(255, 255, 255, 0.1)",
-                transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
-            }}
-            width={280}
-            theme={"dark"}
-        >
-            <Link
-                className="logo"
-                style={{
-                    height: "80px",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    padding: "16px",
-                    background: "var(--sidebar-bg, #0f172a)",
-                    color: "#fff",
-                    boxShadow: "0 2px 8px rgba(0, 0, 0, 0.05)",
-                    borderBottom: `1px solid rgba(255, 255, 255, 0.1)`,
-                    transition: "all 0.3s ease",
-                    position: "relative",
-                    zIndex: 2,
-                }}
-                href="/dashboard"
-            >
-                {collapsed ? (
-                    <h1 style={{ color: "white", margin: 0, fontSize: "20px", fontWeight: "bold" }}>AD</h1>
-                ) : (
-                    <h1 style={{ color: "white", margin: 0, fontSize: "24px", fontWeight: "bold", textAlign: "center" }}>Admin Dashboard</h1>
-                )}
-            </Link>
-
-            <div
-                style={{
-                    padding: "12px 0",
-                    height: "calc(100vh - 80px)",
-                    overflowY: "auto",
-                    overflowX: "hidden",
-                    scrollbarWidth: "thin",
-                    scrollbarColor: "rgba(255, 255, 255, 0.2) transparent",
-                }}
-                className="custom-sidebar-scroll"
-            >
-                {filteredSidebarGroups.map((group, index) => (
-                    <div key={group.key || index} style={{ marginBottom: 12 }}>
-                        <Menu
-                            mode="inline"
-                            defaultOpenKeys={[pathname.split("/")[1] ? `/${pathname.split("/")[1]}` : "/dashboard"]}
-                            selectedKeys={[pathname]}
-                            style={{
-                                borderRight: 0,
-                                background: "transparent",
-                            }}
-                            openKeys={stateOpenKeys}
-                            onOpenChange={onOpenChange}
-                            items={group.filteredItems as MenuProps["items"]}
-                            theme={"dark"}
-                            className="custom-sidebar-menu"
-                        />
-                    </div>
-                ))}
-            </div>
-        </Sider>
-    );
+      <div
+        className="custom-sidebar-scroll"
+        style={{
+          padding: "5px 0",
+          height: "calc(100vh - 80px)",
+          overflowY: "auto",
+          overflowX: "hidden",
+          scrollbarWidth: "thin",
+          scrollbarColor: "rgba(0, 0, 0, 0.2) transparent",
+        }}
+      >
+        {sidebarGroups.map((group, index) => (
+          <div key={group.key || index} style={{ marginBottom: 12 }}>
+            <Menu
+              mode="inline"
+              theme="light"
+              selectedKeys={selectedItem ? [selectedItem.key] : []}
+              defaultOpenKeys={defaultOpenKeys}
+              onClick={onMenuSelect}
+              items={toAntdMenuItems(group.menuItems)}
+              className="custom-sidebar-menu"
+              style={{
+                borderInlineEnd: 0,
+                background: "var(--color-bg-container, #ffffff)",
+              }}
+            />
+          </div>
+        ))}
+      </div>
+    </Sider>
+  );
 }

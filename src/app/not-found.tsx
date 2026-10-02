@@ -1,26 +1,13 @@
-import { Button, Result } from "antd";
-import Link from "next/link";
-//
+import RouteState from "@/components/shared/route-state";
 export default function NotFound() {
   return (
-    <div
-      style={{
-        height: "100vh",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-      }}
-    >
-      <Result
-        status="404"
-        title="404"
-        subTitle="Sorry, you are not authorized to access this page."
-        extra={
-          <Link href={"/dashboard"}>
-            <Button type="primary">Back Home</Button>
-          </Link>
-        }
-      />
-    </div>
+    <RouteState
+      variant="global"
+      statusCode="404"
+      title="Page not found"
+      description="The page you're looking for doesn't exist. Check the address or return home to continue."
+      homeHref="/"
+      homeLabel="Home"
+    />
   );
 }

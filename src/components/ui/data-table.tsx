@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import { TMeta } from "@/types";
 import { Table as AntdTable } from "antd";
 import { ColumnsType } from "antd/es/table";
@@ -16,13 +16,10 @@ interface TableProps<TData> {
   setLimit: (limit: number) => void;
   setSortBy: (field: string) => void;
   setSortOrder: (order: string) => void;
-  setStatus?: (value: string | undefined) => void;
-  setMediaType?: (value: string | undefined) => void;
-  setFieldsType?: (value: string) => void;
   showSizeChanger?: boolean;
   urlParamsUpdate?: boolean;
-  dataSource?: TData[ ];
   pagination?: boolean;
+  rowKey?: string;
 }
 
 export default function Table<TData>({
@@ -36,38 +33,42 @@ export default function Table<TData>({
   limit,
   setLimit,
   setSortBy,
-  setStatus,
-  setMediaType,
   setSortOrder,
   showSizeChanger = true,
   urlParamsUpdate = true,
   pagination = true,
+  rowKey = "id",
 }: TableProps<TData>) {
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  // Calculate column widths
+
   const adjustedColumns = columns.map((col) => {
-    // If the column has a fixed width, use it
+
     if (col.width) {
       return { ...col };
     }
-    // For columns without fixed width, distribute remaining space equally
+
+
     const columnsWithoutWidth = columns.filter((c) => !c.width).length;
+
     const totalFixedWidth = columns
       .filter((c) => c.width)
       .reduce((sum, c) => {
         if (typeof c.width === "number") {
           return sum + c.width;
-        } else if (typeof c.width === "string") {
+        }
+
+        if (typeof c.width === "string") {
           return sum + (parseInt(c.width) || 0);
         }
-        return sum; // Handle undefined case
+
+        return sum;
       }, 0);
+
     const remainingWidth =
-      columnsWithoutWidth > 0
-        ? (100 - totalFixedWidth) / columnsWithoutWidth
-        : 0;
+      columnsWithoutWidth > 0 ? (100 - totalFixedWidth) / columnsWithoutWidth : 0;
+
     return {
       ...col,
       width: `${remainingWidth}%`,
@@ -92,53 +93,60 @@ export default function Table<TData>({
     router.push(`?${params.toString()}`);
   };
 
-  const handleTableChange = (pagination: any, filters: any, sorter: any) => {
-    const newPage = pagination.current;
-    const newLimit = pagination.pageSize;
+  const handleTableChange = (
+    paginationInfo: any,
+    _filters: any,
+    sorter: any,
+    extra: { action: string },
+  ) => {
+    void _filters;
+    const newPage = paginationInfo.pageSize !== limit ? 1 : paginationInfo.current;
+
+    const newLimit = paginationInfo.pageSize;
 
     setPage(newPage);
     setLimit(newLimit);
+
     if (urlParamsUpdate) {
       updateUrlParams(newPage, newLimit);
     }
 
-    if (sorter.field && sorter.order) {
-      setSortBy(sorter.field);
-      setSortOrder(sorter.order === "ascend" ? "asc" : "desc");
-    } else {
-      setSortBy("createdAt");
-      setSortOrder("desc");
+    if (extra.action === "sort") {
+      if (sorter.field && sorter.order) {
+        setSortBy(sorter.field);
+        setSortOrder(sorter.order === "ascend" ? "asc" : "desc");
+      } else {
+        setSortBy("createdAt");
+        setSortOrder("desc");
+      }
     }
 
-    if (setStatus) {
-      if (filters.status) setStatus(filters.status[0]);
-      else setStatus(undefined);
-    }
-    if (setMediaType) {
-      if (filters.media_type) setMediaType(filters.media_type[0]);
-      else setMediaType(undefined);
-    }
   };
 
   const paginationConfig = {
-        current: page,
-        pageSize: limit,
-        total: meta?.total || 0,
-        showSizeChanger: showSizeChanger,
-        pageSizeOptions: ["10", "20", "50"],
-        showTotal: (total: any, range: any[]) =>
-          `${range[0]}-${range[1]} of ${total} items`,
-      }
+    current: page,
+    pageSize: limit,
+    total: meta?.total || 0,
+    showSizeChanger,
+    pageSizeOptions: ["10", "20", "50"],
+    showTotal: (total: number, range: [number, number]) =>
+      `${range[0]}-${range[1]} of ${total} items`,
+  };
+
   return (
-    <AntdTable
-      dataSource={data}
-      columns={adjustedColumns}
-      loading={isLoading || isFetching}
-      rowKey="id"
-      pagination={pagination ? paginationConfig : false}
-      onChange={handleTableChange}
-      id="data-table"
-      scroll={{ x: "max-content" }} // Ensure table is scrollable if content overflows
-    />
+    <div className="custom-data-table">
+      <AntdTable
+        dataSource={data}
+        columns={adjustedColumns}
+        loading={isLoading || isFetching}
+        rowKey={rowKey}
+        pagination={pagination ? paginationConfig : false}
+        onChange={handleTableChange}
+        id="data-table"
+        tableLayout="fixed"
+        scroll={{ x: 1100 }}
+        rowClassName={(_, index) => (index % 2 === 0 ? "table-row-even" : "table-row-odd")}
+      />
+    </div>
   );
 }
