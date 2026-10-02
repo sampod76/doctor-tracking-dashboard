@@ -1,9 +1,7 @@
-
 const nextConfig = {
   eslint: { ignoreDuringBuilds: false },
   typescript: { ignoreBuildErrors: false },
   productionBrowserSourceMaps: false,
-
 
   output: process.platform === "win32" ? undefined : "standalone",
 
@@ -27,7 +25,7 @@ const nextConfig = {
     return [
       {
         // Content-hashed image names can be cached across deployments safely.
-        source: "/:asset(auth-banner|auth-logo|background).:hash([a-f0-9]{12}).webp",
+        source: "/:asset(auth-banner|auth-logo|background).webp",
         headers: [{ key: "Cache-Control", value: "public, max-age=31536000, immutable" }],
       },
     ];
