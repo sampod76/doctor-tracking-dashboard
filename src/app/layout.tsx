@@ -7,8 +7,8 @@ import dynamic from "next/dynamic";
 import "../styles/globals.css";
 
 export const metadata: Metadata = {
-  title: "Admin Dashboard",
-  description: "A reusable admin dashboard boilerplate.",
+  title: "Doctor Tracker",
+  description: "A reusable Doctor Tracker boilerplate.",
 };
 
 const ReduxProvider = dynamic(() => import("@/provider/redux-provider"), {

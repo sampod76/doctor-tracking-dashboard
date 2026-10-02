@@ -32,7 +32,10 @@ export default function ChangePasswordPage() {
     }
   }
   return (
-    <Card title="Change Password" className="m-6 max-w-xl">
+    <Card
+      title="Change Password"
+      className="m-6 mx-auto max-w-xl rounded-lg shadow-md shadow-blue-200"
+    >
       <Form form={form} layout="vertical" onFinish={submit} disabled={isLoading}>
         <Form.Item
           name="currentPassword"
